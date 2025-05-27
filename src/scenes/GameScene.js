@@ -98,8 +98,12 @@ export default class GameScene extends Phaser.Scene {
     }
     
     createGameObjects() {
+        // 获取实际游戏尺寸
+        const gameWidth = this.game.config.width;
+        const gameHeight = this.game.config.height;
+        
         // 创建玩家
-        this.player = new Player(this, GAME_CONFIG.WIDTH / 2, GAME_CONFIG.HEIGHT - 100);
+        this.player = new Player(this, gameWidth / 2, gameHeight - 100);
         
         // 设置玩家的触摸控制
         this.player.setTouchControls(this.touchControls);
@@ -278,7 +282,8 @@ export default class GameScene extends Phaser.Scene {
     spawnEnemy() {
         if (this.gameState.paused || this.gameState.gameOver) return;
         
-        const x = Math.random() * (GAME_CONFIG.WIDTH - 40);
+        const gameWidth = this.game.config.width;
+        const x = Math.random() * (gameWidth - 40);
         const enemy = Enemy.createRandom(this, x, -40);
         this.enemies.add(enemy);
     }
@@ -557,10 +562,17 @@ export default class GameScene extends Phaser.Scene {
     }
     
     createStarField() {
+        // 获取实际游戏尺寸
+        const gameWidth = this.game.config.width;
+        const gameHeight = this.game.config.height;
+        
+        // 根据屏幕大小调整星星数量
+        const starCount = Math.floor((gameWidth * gameHeight) / 5000); // 每5000像素一颗星
+        
         // 创建星空背景
-        for (let i = 0; i < 100; i++) {
-            const x = Math.random() * 600;
-            const y = Math.random() * 800;
+        for (let i = 0; i < starCount; i++) {
+            const x = Math.random() * gameWidth;
+            const y = Math.random() * gameHeight;
             const star = this.add.circle(x, y, Math.random() * 2, 0xffffff, Math.random() * 0.8 + 0.2);
             
             // 星星闪烁动画

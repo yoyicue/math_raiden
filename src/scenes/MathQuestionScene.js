@@ -24,16 +24,22 @@ export default class MathQuestionScene extends Phaser.Scene {
     }
 
     create() {
+        // 获取实际游戏尺寸
+        const gameWidth = this.game.config.width;
+        const gameHeight = this.game.config.height;
+        const centerX = gameWidth / 2;
+        const centerY = gameHeight / 2;
+        
         // 半透明背景
-        this.add.rectangle(300, 400, 600, 800, 0x000000, 0.8);
+        this.add.rectangle(centerX, centerY, gameWidth, gameHeight, 0x000000, 0.8);
         
         // 模态框背景
-        const modalBg = this.add.rectangle(300, 400, 400, 320, 0x000000, 0.9);
+        const modalBg = this.add.rectangle(centerX, centerY, Math.min(400, gameWidth - 40), 320, 0x000000, 0.9);
         modalBg.setStrokeStyle(3, 0xff6600);
         
         // 道具类型显示
         const powerupName = this.getPowerupName(this.powerType);
-        this.add.text(300, 280, powerupName, {
+        this.add.text(centerX, centerY - 120, powerupName, {
             fontSize: '22px',
             color: '#ff6600',
             fontFamily: 'Arial',
@@ -41,7 +47,7 @@ export default class MathQuestionScene extends Phaser.Scene {
         }).setOrigin(0.5);
         
         // 题目显示
-        this.questionText = this.add.text(300, 340, this.question?.question || '2 + 3 = ?', {
+        this.questionText = this.add.text(centerX, centerY - 60, this.question?.question || '2 + 3 = ?', {
             fontSize: '32px',
             color: '#ffffff',
             fontFamily: 'Arial',
@@ -64,11 +70,14 @@ export default class MathQuestionScene extends Phaser.Scene {
     }
     
     createTouchInput() {
+        const centerX = this.game.config.width / 2;
+        const centerY = this.game.config.height / 2;
+        
         // 创建答案显示区域
-        this.answerDisplay = this.add.rectangle(300, 400, 120, 50, 0x333333, 1);
+        this.answerDisplay = this.add.rectangle(centerX, centerY, 120, 50, 0x333333, 1);
         this.answerDisplay.setStrokeStyle(3, 0xff6600, 1);
         
-        this.answerText = this.add.text(300, 400, '?', {
+        this.answerText = this.add.text(centerX, centerY, '?', {
             fontSize: '24px',
             color: '#00ff00',
             fontFamily: 'Arial',
@@ -76,7 +85,7 @@ export default class MathQuestionScene extends Phaser.Scene {
         }).setOrigin(0.5);
         
         // 创建触摸键盘
-        this.touchKeyboard = new TouchKeyboard(this, 300, 550, (value) => {
+        this.touchKeyboard = new TouchKeyboard(this, centerX, centerY + 150, (value) => {
             this.handleTouchInput(value);
         });
         
@@ -85,8 +94,11 @@ export default class MathQuestionScene extends Phaser.Scene {
     }
     
     createDesktopInput() {
+        const centerX = this.game.config.width / 2;
+        const centerY = this.game.config.height / 2;
+        
         // 创建输入框（使用DOM元素）
-        this.inputElement = this.add.dom(300, 400).createFromHTML(`
+        this.inputElement = this.add.dom(centerX, centerY).createFromHTML(`
             <input type="number" id="mathInput" placeholder="?" style="
                 font-size: 24px; 
                 width: 120px; 
@@ -103,9 +115,9 @@ export default class MathQuestionScene extends Phaser.Scene {
         `);
         
         // 提交按钮
-        const submitButton = this.add.rectangle(300, 470, 120, 40, 0xff6600);
+        const submitButton = this.add.rectangle(centerX, centerY + 70, 120, 40, 0xff6600);
         submitButton.setStrokeStyle(2, 0xff8800);
-        const submitText = this.add.text(300, 470, '确定', {
+        const submitText = this.add.text(centerX, centerY + 70, '确定', {
             fontSize: '16px',
             color: '#ffffff',
             fontFamily: 'Arial',
@@ -150,7 +162,10 @@ export default class MathQuestionScene extends Phaser.Scene {
     createTimer() {
         // 20秒倒计时
         this.timeLeft = 20;
-        this.timerText = this.add.text(420, 280, `${this.timeLeft}s`, {
+        const centerX = this.game.config.width / 2;
+        const centerY = this.game.config.height / 2;
+        
+        this.timerText = this.add.text(centerX + 120, centerY - 120, `${this.timeLeft}s`, {
             fontSize: '16px',
             color: '#ffff00',
             fontFamily: 'Arial',

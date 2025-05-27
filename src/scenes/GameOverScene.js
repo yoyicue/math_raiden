@@ -8,11 +8,17 @@ export default class GameOverScene extends Phaser.Scene {
     }
 
     create() {
+        // 获取实际游戏尺寸
+        const gameWidth = this.game.config.width;
+        const gameHeight = this.game.config.height;
+        const centerX = gameWidth / 2;
+        const centerY = gameHeight / 2;
+        
         // 背景
-        this.add.rectangle(300, 400, 600, 800, 0x000000, 0.9);
+        this.add.rectangle(centerX, centerY, gameWidth, gameHeight, 0x000000, 0.9);
         
         // 游戏结束标题
-        const title = this.add.text(300, 200, 'GAME OVER', {
+        const title = this.add.text(centerX, centerY - 200, 'GAME OVER', {
             fontSize: '64px',
             color: '#ff4444',
             fontFamily: 'Arial',
@@ -30,7 +36,7 @@ export default class GameOverScene extends Phaser.Scene {
         });
         
         // 最终得分
-        this.add.text(300, 300, `最终得分: ${this.gameData.score || 0}`, {
+        this.add.text(centerX, centerY - 100, `最终得分: ${this.gameData.score || 0}`, {
             fontSize: '36px',
             color: '#00ff00',
             fontFamily: 'Arial'
@@ -44,7 +50,7 @@ export default class GameOverScene extends Phaser.Scene {
             `数学题难度: G${this.gameData.gradeLevel || 1}`
         ];
         
-        this.add.text(300, 400, stats, {
+        this.add.text(centerX, centerY, stats, {
             fontSize: '18px',
             color: '#ffffff',
             fontFamily: 'Arial',
@@ -53,8 +59,8 @@ export default class GameOverScene extends Phaser.Scene {
         }).setOrigin(0.5);
         
         // 重新开始按钮
-        const restartButton = this.add.rectangle(200, 550, 150, 50, 0xff6600);
-        const restartText = this.add.text(200, 550, '重新开始', {
+        const restartButton = this.add.rectangle(centerX - 100, centerY + 150, 150, 50, 0xff6600);
+        const restartText = this.add.text(centerX - 100, centerY + 150, '重新开始', {
             fontSize: '20px',
             color: '#ffffff',
             fontFamily: 'Arial'
@@ -68,8 +74,8 @@ export default class GameOverScene extends Phaser.Scene {
         });
         
         // 返回主菜单按钮
-        const menuButton = this.add.rectangle(400, 550, 150, 50, 0x333333);
-        const menuText = this.add.text(400, 550, '返回主菜单', {
+        const menuButton = this.add.rectangle(centerX + 100, centerY + 150, 150, 50, 0x333333);
+        const menuText = this.add.text(centerX + 100, centerY + 150, '返回主菜单', {
             fontSize: '20px',
             color: '#ffffff',
             fontFamily: 'Arial'

@@ -6,11 +6,17 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     create() {
+        // 获取实际游戏尺寸
+        const gameWidth = this.game.config.width;
+        const gameHeight = this.game.config.height;
+        const centerX = gameWidth / 2;
+        const centerY = gameHeight / 2;
+        
         // 背景
-        this.add.rectangle(300, 400, 600, 800, 0x000428);
+        this.add.rectangle(centerX, centerY, gameWidth, gameHeight, 0x000428);
         
         // 标题
-        const title = this.add.text(300, 200, '数学雷电', {
+        const title = this.add.text(centerX, centerY - 200, '数学雷电', {
             fontSize: '72px',
             fontFamily: 'Arial',
             color: '#00ff00',
@@ -31,7 +37,7 @@ export default class MenuScene extends Phaser.Scene {
         });
         
         // 副标题
-        this.add.text(300, 280, '边玩边学，提升数学技能', {
+        this.add.text(centerX, centerY - 120, '边玩边学，提升数学技能', {
             fontSize: '24px',
             color: '#ffffff',
             fontFamily: 'Arial'
@@ -42,8 +48,8 @@ export default class MenuScene extends Phaser.Scene {
         this.createDifficultyButtons();
         
         // 开始按钮
-        const startButton = this.add.rectangle(300, 500, 200, 60, 0x00ff00);
-        const startText = this.add.text(300, 500, '开始游戏', {
+        const startButton = this.add.rectangle(centerX, centerY + 100, 200, 60, 0x00ff00);
+        const startText = this.add.text(centerX, centerY + 100, '开始游戏', {
             fontSize: '28px',
             color: '#000000',
             fontStyle: 'bold',
@@ -74,7 +80,7 @@ export default class MenuScene extends Phaser.Scene {
         });
         
         // 操作说明
-        this.add.text(300, 600, [
+        this.add.text(centerX, centerY + 200, [
             '游戏操作：',
             '方向键移动 | 自动射击 | P键暂停',
             '拾取道具触发数学题获得奖励'
@@ -87,7 +93,7 @@ export default class MenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
         
         // 版本信息
-        this.add.text(300, 750, 'Phaser版 v1.0', {
+        this.add.text(centerX, gameHeight - 50, 'Phaser版 v1.0', {
             fontSize: '14px',
             color: '#666666',
             fontFamily: 'Arial'
@@ -95,17 +101,20 @@ export default class MenuScene extends Phaser.Scene {
     }
     
     createDifficultyButtons() {
+        const centerX = this.game.config.width / 2;
+        const centerY = this.game.config.height / 2;
+        
         const difficulties = [
-            { grade: 1, text: 'G1 - 10以内加减', y: 350 },
-            { grade: 2, text: 'G2 - 20以内加减', y: 390 },
-            { grade: 3, text: 'G3 - 乘法运算', y: 430 }
+            { grade: 1, text: 'G1 - 10以内加减', y: centerY - 50 },
+            { grade: 2, text: 'G2 - 20以内加减', y: centerY - 10 },
+            { grade: 3, text: 'G3 - 乘法运算', y: centerY + 30 }
         ];
         
         this.diffButtons = [];
         
         difficulties.forEach(diff => {
-            const button = this.add.rectangle(300, diff.y, 250, 35, 0x333333);
-            const text = this.add.text(300, diff.y, diff.text, {
+            const button = this.add.rectangle(centerX, diff.y, 250, 35, 0x333333);
+            const text = this.add.text(centerX, diff.y, diff.text, {
                 fontSize: '18px',
                 color: '#ffffff',
                 fontFamily: 'Arial'
