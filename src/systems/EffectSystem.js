@@ -268,6 +268,58 @@ export default class EffectSystem {
         }
     }
     
+    createMissileTrail(missile) {
+        // 导弹尾焰效果
+        const trail = this.scene.add.group();
+        
+        // 创建尾焰粒子发射器
+        const emitter = this.scene.add.particles(missile.x, missile.y, 'particle', {
+            speed: { min: 50, max: 100 },
+            scale: { start: 0.3, end: 0 },
+            alpha: { start: 0.8, end: 0 },
+            tint: [0xff6600, 0xff0000, 0xffff00],
+            lifespan: 200,
+            frequency: 20,
+            angle: { min: missile.rotation * 180 / Math.PI + 150, max: missile.rotation * 180 / Math.PI + 210 }
+        });
+        
+        // 跟随导弹
+        const updateTimer = this.scene.time.addEvent({
+            delay: 16, // 60fps
+            callback: () => {
+                if (missile.active && emitter.active) {
+                    emitter.setPosition(missile.x, missile.y);
+                    // 更新发射角度
+                    emitter.setConfig({
+                        angle: { 
+                            min: missile.rotation * 180 / Math.PI + 150, 
+                            max: missile.rotation * 180 / Math.PI + 210 
+                        }
+                    });
+                } else {
+                    updateTimer.destroy();
+                    if (emitter.active) {
+                        emitter.stop();
+                        this.scene.time.delayedCall(500, () => emitter.destroy());
+                    }
+                }
+            },
+            loop: true
+        });
+        
+        return {
+            emitter: emitter,
+            timer: updateTimer,
+            destroy: () => {
+                updateTimer.destroy();
+                if (emitter.active) {
+                    emitter.stop();
+                    this.scene.time.delayedCall(500, () => emitter.destroy());
+                }
+            }
+        };
+    }
+    
     update() {
         // 更新所有特效
         // 这里可以添加持续性特效的更新逻辑

@@ -1,6 +1,7 @@
 import Player from '../objects/Player.js';
 import Enemy from '../objects/Enemy.js';
 import { BulletManager } from '../objects/Bullet.js';
+import Missile from '../objects/Missile.js';
 import EffectSystem from '../systems/EffectSystem.js';
 import { GAME_CONFIG, POWERUP_CONFIG } from '../utils/Constants.js';
 
@@ -73,6 +74,9 @@ export default class GameScene extends Phaser.Scene {
         
         // 创建道具组
         this.powerups = this.add.group();
+        
+        // 创建导弹组
+        this.missiles = this.add.group();
     }
     
     createGameObjects() {
@@ -116,6 +120,15 @@ export default class GameScene extends Phaser.Scene {
             this.player,
             this.powerups,
             this.playerCollectPowerup,
+            null,
+            this
+        );
+        
+        // 导弹 vs 敌机
+        this.physics.add.overlap(
+            this.missiles,
+            this.enemies,
+            this.missileHitEnemy,
             null,
             this
         );
@@ -197,6 +210,13 @@ export default class GameScene extends Phaser.Scene {
         this.applyPowerupEffect(powerup.powerType);
         
         powerup.destroy();
+    }
+    
+    missileHitEnemy(missile, enemy) {
+        if (!missile.active || !enemy.active) return;
+        
+        // 导弹击中敌机，导弹会自动爆炸并造成范围伤害
+        missile.hit();
     }
     
     applyPowerupEffect(powerType) {
@@ -315,6 +335,13 @@ export default class GameScene extends Phaser.Scene {
         this.gameState.score += points;
     }
     
+    createMissile(x, y) {
+        // 创建追踪导弹
+        const missile = new Missile(this, x, y);
+        this.missiles.add(missile);
+        return missile;
+    }
+    
     syncGameState() {
         // 同步玩家状态到游戏状态
         if (this.player && this.player.getStatus) {
@@ -407,6 +434,13 @@ export default class GameScene extends Phaser.Scene {
         this.enemies.children.entries.forEach(enemy => {
             if (enemy.active) {
                 enemy.update();
+            }
+        });
+        
+        // 更新导弹
+        this.missiles.children.entries.forEach(missile => {
+            if (missile.active) {
+                missile.update();
             }
         });
         
