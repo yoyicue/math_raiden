@@ -32,28 +32,28 @@ export const ENEMY_CONFIG = {
         BASIC: {
             hp: 1,
             speed: 2,
-            shootInterval: 60,
+            shootInterval: 90,     // 降低射击频率
             score: 10,
             color: 0xff0000
         },
         FAST: {
             hp: 1,
             speed: 4,
-            shootInterval: 45,
+            shootInterval: 75,     // 降低射击频率
             score: 15,
             color: 0xff6600
         },
         TANK: {
             hp: 3,
             speed: 1,
-            shootInterval: 90,
+            shootInterval: 120,    // 降低射击频率
             score: 25,
             color: 0x666666
         },
         SHOOTER: {
             hp: 2,
             speed: 2,
-            shootInterval: 30,
+            shootInterval: 50,     // 降低射击频率
             score: 20,
             color: 0x9900ff
         }
@@ -73,40 +73,40 @@ export const POWERUP_CONFIG = {
             color: 0xffff00, 
             name: '武器升级', 
             icon: '⚡',
-            dropRate: 0.2
+            dropRate: 0.25      // 提高武器升级掉落率
         },
         SHIELD: { 
             color: 0x00ffff, 
             name: '护盾', 
             icon: '🛡️',
-            dropRate: 0.2
+            dropRate: 0.25      // 提高护盾掉落率
         },
         LIFE: { 
             color: 0xff00ff, 
             name: '生命值', 
             icon: '❤️',
-            dropRate: 0.15
+            dropRate: 0.2       // 提高生命值掉落率
         },
         BOMB: { 
             color: 0xff4444, 
             name: '清屏炸弹', 
             icon: '💥',
-            dropRate: 0.1
+            dropRate: 0.15      // 提高清屏炸弹掉落率
         },
         MISSILE: { 
             color: 0x00ff00, 
             name: '追踪导弹', 
             icon: '🚀',
-            dropRate: 0.2
+            dropRate: 0.1       // 降低导弹掉落率，避免过于强力
         },
         SCORE: { 
             color: 0xffd700, 
             name: '分数奖励', 
             icon: '⭐',
-            dropRate: 0.15
+            dropRate: 0.05      // 降低分数奖励掉落率
         }
     },
-    DROP_CHANCE: 0.3,  // 30%概率掉落道具
+    DROP_CHANCE: 0.4,  // 提高到40%概率掉落道具
     SPEED: 90,
     GLOW_RADIUS: 20
 };
@@ -114,12 +114,15 @@ export const POWERUP_CONFIG = {
 // 武器配置
 export const WEAPON_CONFIG = {
     BULLET_SPEED: 600,
-    ENEMY_BULLET_SPEED: 300,
-    MISSILE_SPEED: 400,
-    MISSILE_TURN_SPEED: 0.1,
+    ENEMY_BULLET_SPEED: 250,        // 降低敌机子弹速度
+    MISSILE_SPEED: 350,             // 稍微降低导弹速度
+    MISSILE_TURN_SPEED: 0.15,       // 提高导弹转向速度，让追踪效果更明显
+    MISSILE_LIFETIME: 5000,         // 导弹生命周期5秒
+    MISSILE_TARGET_SEARCH_INTERVAL: 500,  // 目标查找间隔500ms
+    MISSILE_TARGET_RANGE: 450,      // 导弹目标搜索范围
     SHOOT_INTERVALS: {
-        PLAYER: 200,    // 毫秒
-        MISSILE: 1000   // 毫秒
+        PLAYER: 180,    // 稍微提高玩家射击频率
+        MISSILE: 800    // 降低导弹发射间隔
     }
 };
 
@@ -144,11 +147,11 @@ export const MATH_CONFIG = {
     },
     REWARDS: {
         CORRECT: {
-            score: 100,
-            invulnerableTime: 180
+            score: 150,             // 提高答对题目的分数奖励
+            invulnerableTime: 240   // 延长无敌时间
         },
         INCORRECT: {
-            invulnerableTime: 60
+            invulnerableTime: 90    // 答错也给更多无敌时间
         }
     }
 };

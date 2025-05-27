@@ -8,9 +8,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         
         // 基础属性
         this.lives = PLAYER_CONFIG.MAX_LIVES;
-        this.shield = 0;
+        this.shield = 20;               // 给玩家一些初始护盾
         this.weaponLevel = 1;
-        this.missiles = 0;
+        this.missiles = 10;             // 给玩家一些初始导弹
         this.invulnerable = 0;
         this.speed = PLAYER_CONFIG.SPEED;
         

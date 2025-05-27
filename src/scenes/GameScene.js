@@ -1,7 +1,7 @@
 import Player from '../objects/Player.js';
 import Enemy from '../objects/Enemy.js';
 import { BulletManager } from '../objects/Bullet.js';
-import Missile from '../objects/Missile.js';
+import MissileManager from '../managers/MissileManager.js';
 import EffectSystem from '../systems/EffectSystem.js';
 import MathSystem from '../systems/MathSystem.js';
 import HUD from '../ui/HUD.js';
@@ -58,7 +58,7 @@ export default class GameScene extends Phaser.Scene {
         
         // 敌机生成定时器
         this.enemySpawnTimer = this.time.addEvent({
-            delay: 2000, // 2秒生成一个敌机
+            delay: 2500, // 增加到2.5秒生成一个敌机，降低敌机密度
             callback: this.spawnEnemy,
             callbackScope: this,
             loop: true
@@ -89,6 +89,9 @@ export default class GameScene extends Phaser.Scene {
         // 初始化子弹管理器
         this.bulletManager = new BulletManager(this);
         
+        // 初始化导弹管理器
+        this.missileManager = new MissileManager(this);
+        
         // 初始化特效系统
         this.effectSystem = new EffectSystem(this);
         
@@ -108,8 +111,8 @@ export default class GameScene extends Phaser.Scene {
         // 创建道具组
         this.powerups = this.add.group();
         
-        // 创建导弹组
-        this.missiles = this.add.group();
+        // 获取导弹组引用
+        this.missiles = this.missileManager.getMissiles();
     }
     
     createGameObjects() {
@@ -313,7 +316,13 @@ export default class GameScene extends Phaser.Scene {
     }
     
     playerBulletHitEnemy(bullet, enemy) {
-        if (!bullet.active || !enemy.active) return;
+        if (!bullet || !enemy || !bullet.active || !enemy.active) return;
+        
+        // 确保敌机对象有takeDamage方法
+        if (typeof enemy.takeDamage !== 'function') {
+            console.warn('Enemy object does not have takeDamage method:', enemy);
+            return;
+        }
         
         console.log('playerBulletHitEnemy called');
         
@@ -323,7 +332,7 @@ export default class GameScene extends Phaser.Scene {
         if (enemy.takeDamage(bullet.damage)) {
             // 敌机被摧毁，分数奖励，击败计数由Enemy.destroyEnemy()处理
             console.log('Enemy destroyed, adding score:', enemy.scoreValue);
-            this.addScore(enemy.scoreValue);
+            this.addScore(enemy.scoreValue || 10);
             // 移除重复计数：this.gameState.enemiesDefeated++; 
         }
     }
@@ -340,7 +349,13 @@ export default class GameScene extends Phaser.Scene {
     }
     
     playerHitEnemy(player, enemy) {
-        if (!player.active || !enemy.active) return;
+        if (!player || !enemy || !player.active || !enemy.active) return;
+        
+        // 确保敌机对象有takeDamage方法
+        if (typeof enemy.takeDamage !== 'function') {
+            console.warn('Enemy object does not have takeDamage method:', enemy);
+            return;
+        }
         
         // 玩家撞击敌机
         player.takeDamage();
@@ -364,13 +379,40 @@ export default class GameScene extends Phaser.Scene {
         powerup.destroy();
     }
     
-    missileHitEnemy(missile, enemy) {
-        if (!missile.active || !enemy.active) return;
+    missileHitEnemy(objA, objB) {
+        if (!objA || !objB || !objA.active || !objB.active) return;
+        
+        // 调试信息：检查对象类型
+        console.log('missileHitEnemy called:', {
+            objA: objA.constructor.name,
+            objB: objB.constructor.name,
+            objATexture: objA.texture?.key,
+            objBTexture: objB.texture?.key
+        });
+        
+        // 确定哪个是导弹，哪个是敌机
+        let missile, enemy;
+        if (objA.constructor.name === 'Missile') {
+            missile = objA;
+            enemy = objB;
+        } else if (objB.constructor.name === 'Missile') {
+            missile = objB;
+            enemy = objA;
+        } else {
+            console.warn('Neither object is a Missile:', objA, objB);
+            return;
+        }
+        
+        // 确保敌机对象有takeDamage方法
+        if (typeof enemy.takeDamage !== 'function') {
+            console.warn('Enemy object does not have takeDamage method:', enemy);
+            return;
+        }
         
         // 导弹直接击中敌机，立即造成伤害
         if (enemy.takeDamage(missile.damage)) {
             // 敌机被摧毁，给予分数奖励（击败计数由Enemy.destroyEnemy()处理）
-            this.addScore(enemy.scoreValue + 5); // 导弹击中额外加5分
+            this.addScore((enemy.scoreValue || 10) + 5); // 导弹击中额外加5分
         } else {
             // 敌机未被摧毁，给予少量额外分数
             this.addScore(5);
@@ -484,9 +526,9 @@ export default class GameScene extends Phaser.Scene {
     
     clearAllEnemies() {
         this.enemies.children.entries.forEach(enemy => {
-            if (enemy.active) {
+            if (enemy && enemy.active) {
                 this.effectSystem.createExplosion(enemy.x, enemy.y);
-                this.addScore(enemy.scoreValue);
+                this.addScore(enemy.scoreValue || 10);
                 // 增加击败敌机计数
                 this.gameState.enemiesDefeated++;
                 enemy.destroy();
@@ -495,13 +537,13 @@ export default class GameScene extends Phaser.Scene {
         
         // 清除敌机子弹
         this.bulletManager.enemyBullets.forEach(bullet => {
-            if (bullet.active) bullet.hit();
+            if (bullet && bullet.active) bullet.hit();
         });
     }
     
     clearSomeEnemies(percentage = 0.3) {
         // 清除部分敌机（用于答错题的安慰奖励）
-        const enemies = this.enemies.children.entries.filter(enemy => enemy.active);
+        const enemies = this.enemies.children.entries.filter(enemy => enemy && enemy.active);
         const clearCount = Math.floor(enemies.length * percentage);
         
         for (let i = 0; i < clearCount; i++) {
@@ -511,7 +553,7 @@ export default class GameScene extends Phaser.Scene {
                 this.effectSystem.createExplosion(enemy.x, enemy.y);
                 
                 // 增加分数
-                this.addScore(enemy.scoreValue);
+                this.addScore(enemy.scoreValue || 10);
                 
                 // 增加击败敌机计数
                 this.gameState.enemiesDefeated++;
@@ -527,10 +569,8 @@ export default class GameScene extends Phaser.Scene {
     }
     
     createMissile(x, y) {
-        // 创建追踪导弹
-        const missile = new Missile(this, x, y);
-        this.missiles.add(missile);
-        return missile;
+        // 使用导弹管理器创建导弹
+        return this.missileManager.fireMissile(x, y);
     }
     
     syncGameState() {
@@ -651,12 +691,8 @@ export default class GameScene extends Phaser.Scene {
             }
         });
         
-        // 更新导弹
-        this.missiles.children.entries.forEach(missile => {
-            if (missile.active) {
-                missile.update();
-            }
-        });
+        // 更新导弹管理器
+        this.missileManager.update();
         
         // 更新子弹管理器
         this.bulletManager.update();

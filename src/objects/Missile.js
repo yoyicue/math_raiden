@@ -5,53 +5,89 @@ export default class Missile extends Phaser.Physics.Arcade.Sprite {
         super(scene, x, y, 'missile');
         
         this.scene = scene;
-        this.damage = 3; // 导弹伤害更高
+        this.damage = 2;                    // 降低导弹伤害
         this.speed = WEAPON_CONFIG.MISSILE_SPEED;
         this.turnSpeed = WEAPON_CONFIG.MISSILE_TURN_SPEED;
-        this.target = null;
-        this.lifeTime = 5000; // 5秒生命周期
-        this.startTime = scene.time.now;
+        this.explosionRadius = 50;          // 稍微降低爆炸范围
+        this.lifeTime = WEAPON_CONFIG.MISSILE_LIFETIME;
+        this.targetSearchInterval = WEAPON_CONFIG.MISSILE_TARGET_SEARCH_INTERVAL;
+        this.targetRange = WEAPON_CONFIG.MISSILE_TARGET_RANGE;
         
         // 物理设置
         scene.add.existing(this);
         scene.physics.add.existing(this);
         this.setSize(8, 16);
-        this.setTint(0x00ff00); // 绿色导弹
         
-        // 初始向上飞行
-        this.setVelocityY(-this.speed);
+        // 初始化但不激活
+        this.setActive(false);
+        this.setVisible(false);
+    }
+    
+    // 发射导弹（对象池复用）
+    fire(x, y) {
+        this.setPosition(x, y);
+        this.setActive(true);
+        this.setVisible(true);
         
-        // 寻找最近的敌机作为目标
+        // 重置属性
+        this.target = null;
+        this.startTime = this.scene.time.now;
+        this.lastTargetSearchTime = 0;      // 添加目标查找时间记录
+        this.physicsRotation = -Math.PI / 2; // 初始向上
+        
+        // 设置颜色和初始速度
+        this.setTint(0x00ff00);
+        this.scene.physics.velocityFromRotation(this.physicsRotation, this.speed, this.body.velocity);
+        
+        // 寻找目标
         this.findTarget();
         
-        // 尾焰特效
+        // 创建尾焰效果
         this.createTrailEffect();
+        
+        return this;
     }
     
     findTarget() {
-        if (!this.scene.enemies) return;
+        if (!this.scene.enemies || !this.scene.enemies.children) return;
         
         let closestEnemy = null;
         let closestDistance = Infinity;
         
+        // 直接遍历敌机组，更可靠
         this.scene.enemies.children.entries.forEach(enemy => {
-            if (enemy.active) {
+            if (enemy && enemy.active) {
                 const distance = Phaser.Math.Distance.Between(
                     this.x, this.y, enemy.x, enemy.y
                 );
                 
-                if (distance < closestDistance) {
+                // 使用配置的目标搜索范围
+                if (distance < this.targetRange && distance < closestDistance) {
                     closestDistance = distance;
                     closestEnemy = enemy;
                 }
             }
         });
         
+        // 只在目标状态改变时输出日志
+        const hadTarget = !!this.target;
         this.target = closestEnemy;
+        const hasTarget = !!this.target;
+        
+        if (hadTarget !== hasTarget) {
+            if (hasTarget) {
+                console.log(`导弹锁定目标，距离: ${closestDistance.toFixed(1)}`);
+            } else {
+                console.log('导弹失去目标');
+            }
+        }
+        
+        // 更新查找时间
+        this.lastTargetSearchTime = this.scene.time.now;
     }
     
     createTrailEffect() {
-        // 创建尾焰粒子效果
+        // 使用轻量级的尾焰效果
         if (this.scene.effectSystem) {
             this.trailEffect = this.scene.effectSystem.createMissileTrail(this);
         }
@@ -68,22 +104,41 @@ export default class Missile extends Phaser.Physics.Arcade.Sprite {
         
         // 检查目标是否还存在
         if (this.target && !this.target.active) {
+            this.target = null; // 直接清除无效目标
+        }
+        
+        // 定期查找目标（而不是每帧都查找）
+        const timeSinceLastSearch = this.scene.time.now - this.lastTargetSearchTime;
+        if (!this.target && timeSinceLastSearch > this.targetSearchInterval) {
             this.findTarget();
         }
         
         // 追踪目标
         if (this.target && this.target.active) {
             this.trackTarget();
+        } else {
+            // 没有目标时继续直线飞行
+            this.scene.physics.velocityFromRotation(this.physicsRotation, this.speed, this.body.velocity);
+            this.updateVisualRotation();
+        }
+        
+        // 更新尾焰位置
+        if (this.trailEffect && this.trailEffect.active) {
+            this.trailEffect.setPosition(this.x, this.y);
         }
         
         // 检查是否离开屏幕
-        if (this.y < -50 || this.x < -50 || this.x > this.scene.game.config.width + 50) {
-            this.destroy();
+        if (this.y < -50 || this.y > this.scene.game.config.height + 50 ||
+            this.x < -50 || this.x > this.scene.game.config.width + 50) {
+            this.deactivate();
         }
     }
     
     trackTarget() {
-        if (!this.target) return;
+        if (!this.target || !this.target.active) {
+            this.target = null; // 直接清除无效目标
+            return;
+        }
         
         // 计算到目标的角度
         const targetAngle = Phaser.Math.Angle.Between(
@@ -91,28 +146,39 @@ export default class Missile extends Phaser.Physics.Arcade.Sprite {
             this.target.x, this.target.y
         );
         
-        // 当前角度
-        const currentAngle = this.rotation;
-        
         // 计算角度差
-        let angleDiff = targetAngle - currentAngle;
+        const angleDiff = Phaser.Math.Angle.ShortestBetween(
+            this.physicsRotation * Phaser.Math.RAD_TO_DEG,
+            targetAngle * Phaser.Math.RAD_TO_DEG
+        );
         
-        // 标准化角度差到 -π 到 π 范围
-        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+        // 平滑转向目标
+        const oldRotation = this.physicsRotation;
+        this.physicsRotation = Phaser.Math.Angle.RotateTo(
+            this.physicsRotation,
+            targetAngle,
+            this.turnSpeed * 0.017 // 约60fps时的弧度/帧
+        );
         
-        // 逐渐转向目标
-        const turnAmount = Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), this.turnSpeed);
-        this.rotation += turnAmount;
+        // 调试信息（每2秒输出一次，避免刷屏）
+        if (this.scene.time.now % 2000 < 16) {
+            const distance = Phaser.Math.Distance.Between(this.x, this.y, this.target.x, this.target.y);
+            console.log(`导弹追踪: 距离=${distance.toFixed(1)}, 角度差=${angleDiff.toFixed(1)}°`);
+        }
         
-        // 根据当前角度设置速度
-        const velocityX = Math.cos(this.rotation) * this.speed;
-        const velocityY = Math.sin(this.rotation) * this.speed;
-        this.setVelocity(velocityX, velocityY);
+        // 根据物理角度设置速度
+        this.scene.physics.velocityFromRotation(this.physicsRotation, this.speed, this.body.velocity);
+        
+        // 更新视觉旋转
+        this.updateVisualRotation();
+    }
+    
+    updateVisualRotation() {
+        // 导弹精灵向上，所以需要加90度
+        this.setRotation(this.physicsRotation + Math.PI / 2);
     }
     
     hit() {
-        // 导弹击中目标
         this.explode();
     }
     
@@ -124,62 +190,74 @@ export default class Missile extends Phaser.Physics.Arcade.Sprite {
             this.scene.effectSystem.createExplosion(this.x, this.y, 'medium');
         }
         
-        // 对附近敌机造成范围伤害
-        if (this.scene.enemies) {
-            this.scene.enemies.children.entries.forEach(enemy => {
-                if (enemy.active && !enemy.hitByMissile) { // 跳过已被直接击中的敌机
+        // 使用物理系统进行范围伤害检测
+        const bodiesInRange = this.scene.physics.overlapCirc(
+            this.x, this.y, this.explosionRadius, true, false
+        );
+        
+        bodiesInRange.forEach(body => {
+            if (body.gameObject && body.gameObject.texture && body.gameObject.texture.key === 'enemy') {
+                const enemy = body.gameObject;
+                if (enemy && enemy.active && typeof enemy.takeDamage === 'function') {
                     const distance = Phaser.Math.Distance.Between(
                         this.x, this.y, enemy.x, enemy.y
                     );
                     
-                    if (distance < 60) { // 爆炸范围
-                        if (enemy.takeDamage(this.damage)) {
-                            // 范围伤害摧毁敌机，给予分数奖励
-                            if (this.scene.addScore) {
-                                this.scene.addScore(enemy.scoreValue);
-                            }
+                    // 根据距离计算伤害衰减
+                    const damageMultiplier = 1 - (distance / this.explosionRadius) * 0.5;
+                    const actualDamage = Math.ceil(this.damage * damageMultiplier);
+                    
+                    if (enemy.takeDamage(actualDamage)) {
+                        // 敌机被摧毁，给予分数
+                        if (this.scene.addScore) {
+                            this.scene.addScore(enemy.scoreValue || 10);
                         }
                     }
                 }
-            });
-            
-            // 清理标记
-            this.scene.enemies.children.entries.forEach(enemy => {
-                if (enemy.active) {
-                    enemy.hitByMissile = false;
-                }
-            });
-        }
+            }
+        });
         
         // 播放爆炸音效
         if (this.scene.sound.get('explosion')) {
             this.scene.sound.play('explosion', { volume: 0.4 });
         }
         
+        this.deactivate();
+    }
+    
+    deactivate() {
         // 清理尾焰效果
         if (this.trailEffect) {
-            this.trailEffect.destroy();
+            if (this.trailEffect.stop) {
+                this.trailEffect.stop();
+            }
+            this.trailEffect = null;
         }
         
-        this.destroy();
+        // 重置状态供对象池复用
+        this.setActive(false);
+        this.setVisible(false);
+        
+        // 安全地重置速度
+        if (this.body) {
+            this.setVelocity(0, 0);
+        }
+        
+        this.target = null;
     }
     
     destroy() {
-        // 清理尾焰效果
-        if (this.trailEffect) {
-            this.trailEffect.destroy();
-        }
-        
+        this.deactivate();
         super.destroy();
     }
     
-    // 获取导弹信息
     getInfo() {
         return {
             damage: this.damage,
             speed: this.speed,
             hasTarget: !!this.target,
-            lifeTime: this.lifeTime
+            lifeTime: this.lifeTime,
+            explosionRadius: this.explosionRadius
         };
     }
 } 

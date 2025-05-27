@@ -3,13 +3,24 @@ export default class EffectSystem {
         this.scene = scene;
         this.explosions = [];
         this.particles = [];
+        this.missileTrailManager = null;
         
         this.initializeParticles();
     }
     
     initializeParticles() {
-        // 这里暂时用简单的图形代替粒子效果
-        // 后续可以扩展为真正的粒子系统
+        // 创建单一的导弹尾焰粒子管理器
+        if (this.scene.textures.exists('particle')) {
+            this.missileTrailManager = this.scene.add.particles(0, 0, 'particle', {
+                speed: { min: 50, max: 100 },
+                scale: { start: 0.3, end: 0 },
+                alpha: { start: 0.8, end: 0 },
+                tint: [0xff6600, 0xff0000, 0xffff00],
+                lifespan: 200,
+                frequency: -1, // 手动发射
+                emitting: false
+            });
+        }
     }
     
     createExplosion(x, y, size = 'normal') {
@@ -17,25 +28,33 @@ export default class EffectSystem {
             x: x,
             y: y,
             radius: 5,
-            maxRadius: size === 'large' ? 50 : size === 'small' ? 20 : 30,
+            maxRadius: size === 'large' ? 60 : size === 'small' ? 25 : 40,
             alpha: 1,
             color: 0xff6600
         };
         
         this.explosions.push(explosion);
         
-        // 创建爆炸圆圈效果
-        const circle = this.scene.add.circle(x, y, 5, explosion.color, 0.8);
+        // 1. 创建闪光效果
+        const flash = this.scene.add.circle(x, y, explosion.maxRadius * 0.8, 0xffffff, 0.9);
+        this.scene.tweens.add({
+            targets: flash,
+            alpha: 0,
+            duration: 150,
+            ease: 'Power2',
+            onComplete: () => flash.destroy()
+        });
         
+        // 2. 创建主爆炸圆圈
+        const circle = this.scene.add.circle(x, y, 5, explosion.color, 0.8);
         this.scene.tweens.add({
             targets: circle,
             radius: explosion.maxRadius,
             alpha: 0,
-            duration: 300,
+            duration: 400,
             ease: 'Power2',
             onComplete: () => {
                 circle.destroy();
-                // 从数组中移除
                 const index = this.explosions.indexOf(explosion);
                 if (index > -1) {
                     this.explosions.splice(index, 1);
@@ -43,9 +62,45 @@ export default class EffectSystem {
             }
         });
         
-        // 屏幕震动
+        // 3. 创建冲击波环
+        const shockwave = this.scene.add.circle(x, y, 10, 0xffffff, 0);
+        shockwave.setStrokeStyle(3, 0xffffff, 0.6);
+        this.scene.tweens.add({
+            targets: shockwave,
+            radius: explosion.maxRadius * 1.2,
+            alpha: 0,
+            duration: 500,
+            ease: 'Power3',
+            onComplete: () => shockwave.destroy()
+        });
+        
+        // 4. 创建火花粒子
+        const particleCount = size === 'large' ? 20 : size === 'small' ? 8 : 12;
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (i / particleCount) * Math.PI * 2;
+            const speed = 100 + Math.random() * 150;
+            const spark = this.scene.add.circle(x, y, 2 + Math.random() * 2, 
+                Phaser.Display.Color.GetColor(255, 200 + Math.random() * 55, 0), 
+                0.8 + Math.random() * 0.2
+            );
+            
+            const distance = explosion.maxRadius + Math.random() * 30;
+            this.scene.tweens.add({
+                targets: spark,
+                x: x + Math.cos(angle) * distance,
+                y: y + Math.sin(angle) * distance,
+                alpha: 0,
+                duration: 300 + Math.random() * 200,
+                ease: 'Power2',
+                onComplete: () => spark.destroy()
+            });
+        }
+        
+        // 5. 屏幕震动
         if (size === 'large') {
-            this.scene.cameras.main.shake(300, 0.02);
+            this.scene.cameras.main.shake(400, 0.025);
+        } else if (size === 'medium') {
+            this.scene.cameras.main.shake(200, 0.015);
         } else {
             this.scene.cameras.main.shake(100, 0.01);
         }
@@ -269,53 +324,113 @@ export default class EffectSystem {
     }
     
     createMissileTrail(missile) {
-        // 导弹尾焰效果
-        const trail = this.scene.add.group();
+        // 使用轻量级的尾焰效果
+        if (!this.missileTrailManager) {
+            // 如果没有粒子管理器，使用简单的图形效果
+            return this.createSimpleMissileTrail(missile);
+        }
         
-        // 创建尾焰粒子发射器
-        const emitter = this.scene.add.particles(missile.x, missile.y, 'particle', {
-            speed: { min: 50, max: 100 },
-            scale: { start: 0.3, end: 0 },
-            alpha: { start: 0.8, end: 0 },
-            tint: [0xff6600, 0xff0000, 0xffff00],
-            lifespan: 200,
-            frequency: 20,
-            angle: { min: missile.rotation * 180 / Math.PI + 150, max: missile.rotation * 180 / Math.PI + 210 }
-        });
+        // 创建尾焰效果对象
+        const trail = {
+            active: true,
+            missile: missile,
+            lastPositions: [],
+            maxPositions: 10
+        };
         
-        // 跟随导弹
+        // 更新定时器
         const updateTimer = this.scene.time.addEvent({
             delay: 16, // 60fps
             callback: () => {
-                if (missile.active && emitter.active) {
-                    emitter.setPosition(missile.x, missile.y);
-                    // 更新发射角度
-                    emitter.setConfig({
-                        angle: { 
-                            min: missile.rotation * 180 / Math.PI + 150, 
-                            max: missile.rotation * 180 / Math.PI + 210 
-                        }
-                    });
+                if (missile.active && trail.active) {
+                    // 在导弹位置发射粒子
+                    const angle = missile.rotation + Math.PI; // 相反方向
+                    const offsetX = Math.cos(angle) * 10;
+                    const offsetY = Math.sin(angle) * 10;
+                    
+                    this.missileTrailManager.emitParticleAt(
+                        missile.x + offsetX, 
+                        missile.y + offsetY
+                    );
                 } else {
                     updateTimer.destroy();
-                    if (emitter.active) {
-                        emitter.stop();
-                        this.scene.time.delayedCall(500, () => emitter.destroy());
-                    }
+                    trail.active = false;
                 }
             },
             loop: true
         });
         
         return {
-            emitter: emitter,
-            timer: updateTimer,
-            destroy: () => {
+            active: true,
+            setPosition: (x, y) => {
+                // 兼容性方法，实际不需要设置位置
+            },
+            stop: () => {
+                trail.active = false;
                 updateTimer.destroy();
-                if (emitter.active) {
-                    emitter.stop();
-                    this.scene.time.delayedCall(500, () => emitter.destroy());
+            },
+            destroy: () => {
+                trail.active = false;
+                updateTimer.destroy();
+            }
+        };
+    }
+    
+    createSimpleMissileTrail(missile) {
+        // 使用简单的图形绘制尾焰
+        const graphics = this.scene.add.graphics();
+        const trail = {
+            active: true,
+            positions: [],
+            maxLength: 8
+        };
+        
+        const updateTimer = this.scene.time.addEvent({
+            delay: 16,
+            callback: () => {
+                if (missile.active && trail.active) {
+                    // 添加新位置
+                    trail.positions.push({ x: missile.x, y: missile.y });
+                    
+                    // 限制长度
+                    if (trail.positions.length > trail.maxLength) {
+                        trail.positions.shift();
+                    }
+                    
+                    // 绘制尾焰
+                    graphics.clear();
+                    if (trail.positions.length > 1) {
+                        for (let i = 1; i < trail.positions.length; i++) {
+                            const alpha = i / trail.positions.length;
+                            const width = (i / trail.positions.length) * 4;
+                            
+                            graphics.lineStyle(width, 0xff6600, alpha * 0.6);
+                            graphics.beginPath();
+                            graphics.moveTo(trail.positions[i - 1].x, trail.positions[i - 1].y);
+                            graphics.lineTo(trail.positions[i].x, trail.positions[i].y);
+                            graphics.strokePath();
+                        }
+                    }
+                } else {
+                    updateTimer.destroy();
+                    graphics.destroy();
                 }
+            },
+            loop: true
+        });
+        
+        return {
+            active: true,
+            setPosition: () => {},
+            stop: () => {
+                trail.active = false;
+                updateTimer.destroy();
+                graphics.destroy();
+            },
+            destroy: () => {
+                trail.active = false;
+                updateTimer.destroy();
+                graphics.destroy();
             }
         };
     }
