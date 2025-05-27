@@ -195,32 +195,8 @@ export default class MathQuestionScene extends Phaser.Scene {
     }
     
     showResult(isCorrect, callback) {
-        // 创建结果显示（位置避开输入框）
-        const resultBg = this.add.rectangle(300, 520, 250, 70, isCorrect ? 0x00aa00 : 0xaa0000, 0.9);
-        resultBg.setStrokeStyle(3, isCorrect ? 0x00ff00 : 0xff0000);
-        
-        const resultText = this.add.text(300, 520, isCorrect ? '✓ 正确' : '✗ 错误', {
-            fontSize: '24px',
-            color: '#ffffff',
-            fontFamily: 'Arial',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        
-        // 结果动画
-        resultBg.setScale(0);
-        resultText.setScale(0);
-        
-        this.tweens.add({
-            targets: [resultBg, resultText],
-            scaleX: 1,
-            scaleY: 1,
-            duration: 300,
-            ease: 'Back.easeOut',
-            onComplete: () => {
-                // 1秒后执行回调
-                this.time.delayedCall(1000, callback);
-            }
-        });
+        // 立即执行回调，不等待动画完成（与demo.html保持一致）
+        callback();
     }
     
     destroy() {

@@ -104,7 +104,7 @@ export default class MathSystem {
     handleAnswer(userAnswer, isCorrect) {
         console.log('MathSystem.handleAnswer called:', userAnswer, isCorrect, 'powerType:', this.currentPowerType);
         
-        // 恢复游戏
+        // 立即恢复游戏（与demo.html保持一致）
         this.scene.physics.resume();
         this.scene.scene.resume();
         
@@ -113,27 +113,34 @@ export default class MathSystem {
             this.correctAnswers++;
         }
         
-        // 应用奖励
-        if (isCorrect) {
-            this.applyCorrectReward();
-        } else {
-            this.applyIncorrectReward();
-        }
+        // 保存当前状态用于异步处理
+        const currentPowerType = this.currentPowerType;
+        const currentIsCorrect = isCorrect;
         
-        // 显示结果消息
-        this.showAnswerResult(isCorrect);
-        
-        // 清理当前题目
+        // 清理当前题目（立即清理，避免重复触发）
         this.currentQuestion = null;
         this.currentPowerType = null;
+        
+        // 异步应用奖励和显示消息（100ms后，让游戏先恢复）
+        this.scene.time.delayedCall(100, () => {
+            // 应用奖励
+            if (currentIsCorrect) {
+                this.applyCorrectReward(currentPowerType);
+            } else {
+                this.applyIncorrectReward(currentPowerType);
+            }
+            
+            // 显示结果消息
+            this.showAnswerResult(currentIsCorrect, currentPowerType);
+        });
     }
     
-    applyCorrectReward() {
+    applyCorrectReward(powerType) {
         const player = this.scene.player;
         let rewardMessage = '';
         let scoreBonus = MATH_CONFIG.REWARDS.CORRECT.score;
         
-        switch(this.currentPowerType) {
+        switch(powerType) {
             case 'WEAPON':
                 if (player.weaponLevel < 3) {
                     player.weaponLevel++;
@@ -193,8 +200,8 @@ export default class MathSystem {
         player.invulnerable = MATH_CONFIG.REWARDS.CORRECT.invulnerableTime;
         
         // 显示奖励消息
-        if (this.currentPowerType) {
-            this.scene.hud.showPowerupMessage(this.currentPowerType, true);
+        if (powerType) {
+            this.scene.hud.showPowerupMessage(powerType, true);
         }
         
         // 特效
@@ -203,7 +210,7 @@ export default class MathSystem {
         return rewardMessage;
     }
     
-    applyIncorrectReward() {
+    applyIncorrectReward(powerType) {
         const player = this.scene.player;
         let rewardMessage = '';
         
@@ -211,7 +218,7 @@ export default class MathSystem {
         player.invulnerable = MATH_CONFIG.REWARDS.INCORRECT.invulnerableTime;
         
         // 根据道具类型给予安慰奖励
-        switch(this.currentPowerType) {
+        switch(powerType) {
             case 'WEAPON':
                 this.scene.addScore(50);
                 rewardMessage = '修复未完成，获得50分安慰奖励';
@@ -252,20 +259,14 @@ export default class MathSystem {
         }
         
         // 显示奖励消息
-        if (this.currentPowerType) {
-            this.scene.hud.showPowerupMessage(this.currentPowerType, false);
+        if (powerType) {
+            this.scene.hud.showPowerupMessage(powerType, false);
         }
         
         return rewardMessage;
     }
     
-    showAnswerResult(isCorrect) {
-        // 只有在有活跃数学题时才显示结果
-        if (!this.isQuestionActive()) {
-            console.warn('MathSystem: 尝试显示答题结果，但没有活跃的数学题');
-            return;
-        }
-        
+    showAnswerResult(isCorrect, powerType) {
         const resultText = isCorrect ? '答对了！' : '答错了！';
         const color = isCorrect ? '#00ff00' : '#ff6600';
         
