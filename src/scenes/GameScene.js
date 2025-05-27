@@ -495,6 +495,9 @@ export default class GameScene extends Phaser.Scene {
         // 更新特效系统
         this.effectSystem.update();
         
+        // 同步游戏状态
+        this.syncGameState();
+        
         // 更新HUD
         this.updateHUD();
         
