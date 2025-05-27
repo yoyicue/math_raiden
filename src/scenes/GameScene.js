@@ -183,11 +183,14 @@ export default class GameScene extends Phaser.Scene {
     playerBulletHitEnemy(bullet, enemy) {
         if (!bullet.active || !enemy.active) return;
         
+        console.log('playerBulletHitEnemy called');
+        
         // 子弹击中敌机
         bullet.hit();
         
         if (enemy.takeDamage(bullet.damage)) {
             // 敌机被摧毁
+            console.log('Enemy destroyed, adding score:', enemy.scoreValue);
             this.addScore(enemy.scoreValue);
             this.gameState.enemiesDefeated++;
         }
@@ -217,6 +220,8 @@ export default class GameScene extends Phaser.Scene {
     
     playerCollectPowerup(player, powerup) {
         if (!player.active || !powerup.active) return;
+        
+        console.log('Player collected powerup:', powerup.powerType);
         
         // 玩家拾取道具
         this.effectSystem.createCollectEffect(powerup.x, powerup.y);
@@ -289,6 +294,8 @@ export default class GameScene extends Phaser.Scene {
     }
     
     createPowerup(x, y, type) {
+        console.log('Creating powerup:', type, 'at', x, y);
+        
         const config = POWERUP_CONFIG.TYPES[type];
         const powerup = this.add.rectangle(x, y, 30, 30, config.color);
         

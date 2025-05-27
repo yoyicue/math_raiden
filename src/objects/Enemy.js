@@ -178,14 +178,14 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             this.scene.dropRandomPowerup(this.x, this.y);
         }
         
-        // 增加分数
-        if (this.scene.addScore) {
-            this.scene.addScore(this.scoreValue);
-        }
+        // 分数由调用方处理，这里不重复添加
+        // if (this.scene.addScore) {
+        //     this.scene.addScore(this.scoreValue);
+        // }
         
         // 增加击败敌机计数
-        if (this.scene.gameState && this.scene.gameState.defeatEnemy) {
-            this.scene.gameState.defeatEnemy();
+        if (this.scene.gameState) {
+            this.scene.gameState.enemiesDefeated++;
         }
         
         // 播放爆炸音效
