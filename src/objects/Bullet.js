@@ -41,8 +41,16 @@ export default class Bullet extends Phaser.Physics.Arcade.Sprite {
         
         // 设置速度
         if (this.isPlayer) {
-            // 玩家子弹向上飞行
-            this.setVelocity(0, -this.speed);
+            // 玩家子弹根据角度飞行，支持发散射击
+            if (angle === 0) {
+                // 直线向上
+                this.setVelocity(0, -this.speed);
+            } else {
+                // 带角度的发散射击
+                const velocityX = Math.sin(angle) * this.speed;
+                const velocityY = -Math.cos(angle) * this.speed; // 主要向上，带有横向分量
+                this.setVelocity(velocityX, velocityY);
+            }
         } else {
             // 敌机子弹根据角度飞行（向玩家方向）
             const velocityX = Math.cos(angle) * this.speed;
@@ -169,6 +177,40 @@ export class BulletManager {
             return bullet;
         }
         return null;
+    }
+    
+    // 根据武器等级发射子弹
+    firePlayerBulletsByLevel(x, y, weaponLevel = 1) {
+        const bullets = [];
+        
+        switch(weaponLevel) {
+            case 1:
+                // 1级武器：单发直射
+                const bullet1 = this.firePlayerBullet(x, y, 0);
+                if (bullet1) bullets.push(bullet1);
+                break;
+                
+            case 2:
+                // 2级武器：双发发散射击，增加覆盖面积
+                const bullet2a = this.firePlayerBullet(x - 10, y, -0.2);  // 左侧发散
+                const bullet2b = this.firePlayerBullet(x + 10, y, 0.2);   // 右侧发散
+                if (bullet2a) bullets.push(bullet2a);
+                if (bullet2b) bullets.push(bullet2b);
+                break;
+                
+            case 3:
+            default:
+                // 3级武器：三发发散射击，更大角度覆盖更广范围
+                const bullet3a = this.firePlayerBullet(x, y, 0);         // 中间直射
+                const bullet3b = this.firePlayerBullet(x - 5, y, -0.4);  // 左侧大角度发散
+                const bullet3c = this.firePlayerBullet(x + 5, y, 0.4);   // 右侧大角度发散
+                if (bullet3a) bullets.push(bullet3a);
+                if (bullet3b) bullets.push(bullet3b);
+                if (bullet3c) bullets.push(bullet3c);
+                break;
+        }
+        
+        return bullets;
     }
     
     fireEnemyBullet(x, y, angle = 0) {

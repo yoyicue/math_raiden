@@ -292,26 +292,31 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     shoot() {
         if (!this.scene || !this.active) return;
         
-        // 根据武器等级发射不同模式的子弹
-        switch(this.weaponLevel) {
-            case 1:
-                // 单发子弹
-                this.scene.bulletManager.firePlayerBullet(this.x, this.y - 20);
-                break;
-                
-            case 2:
-                // 双发子弹
-                this.scene.bulletManager.firePlayerBullet(this.x - 10, this.y - 20);
-                this.scene.bulletManager.firePlayerBullet(this.x + 10, this.y - 20);
-                break;
-                
-            case 3:
-            default:
-                // 三发散射子弹
-                this.scene.bulletManager.firePlayerBullet(this.x, this.y - 20);
-                this.scene.bulletManager.firePlayerBullet(this.x - 15, this.y - 20, -0.2);
-                this.scene.bulletManager.firePlayerBullet(this.x + 15, this.y - 20, 0.2);
-                break;
+        // 使用BulletManager的新方法根据武器等级发射子弹
+        if (this.scene.bulletManager && this.scene.bulletManager.firePlayerBulletsByLevel) {
+            this.scene.bulletManager.firePlayerBulletsByLevel(this.x, this.y - 20, this.weaponLevel);
+        } else {
+            // 兼容性回退：使用原有的射击逻辑
+            switch(this.weaponLevel) {
+                case 1:
+                    // 单发子弹
+                    this.scene.bulletManager.firePlayerBullet(this.x, this.y - 20);
+                    break;
+                    
+                case 2:
+                    // 双发子弹，增加发散角度
+                    this.scene.bulletManager.firePlayerBullet(this.x - 10, this.y - 20, -0.2);
+                    this.scene.bulletManager.firePlayerBullet(this.x + 10, this.y - 20, 0.2);
+                    break;
+                    
+                case 3:
+                default:
+                    // 三发散射子弹，更大发散角度
+                    this.scene.bulletManager.firePlayerBullet(this.x, this.y - 20, 0);
+                    this.scene.bulletManager.firePlayerBullet(this.x - 5, this.y - 20, -0.4);
+                    this.scene.bulletManager.firePlayerBullet(this.x + 5, this.y - 20, 0.4);
+                    break;
+            }
         }
         
         // 枪口火花效果
