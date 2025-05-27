@@ -9,6 +9,7 @@ const JOYSTICK_CONFIG = {
     DEPTH_KNOB: 1001,
     DEAD_ZONE: 0.15, // 死区半径比例 (15%)
     SENSITIVITY_CURVE: 1.5, // 灵敏度曲线指数
+    TRIGGER_AREA_RATIO: 0.65, // 动态摇杆触发区域比例 (65%)
     COLORS: {
         BASE: 0x333333,
         BASE_STROKE: 0x666666,
@@ -162,10 +163,11 @@ export default class TouchControls {
         const gameWidth = this.scene.game.config.width;
         const gameHeight = this.scene.game.config.height;
         
-        // 创建左半屏的触摸区域用于动态摇杆
+        // 创建左侧65%的触摸区域用于动态摇杆
+        const triggerWidth = gameWidth * JOYSTICK_CONFIG.TRIGGER_AREA_RATIO;
         this.touchArea = this.scene.add.rectangle(
             0, 0, 
-            gameWidth / 2, // 只占左半屏
+            triggerWidth, // 使用65%的屏幕宽度
             gameHeight, 
             0x000000, 
             0
@@ -249,8 +251,9 @@ export default class TouchControls {
                 return;
             }
             
-            // 检查是否在左半屏
-            if (pointer.x <= this.scene.game.config.width / 2) {
+            // 检查是否在左侧65%区域
+            const triggerWidth = this.scene.game.config.width * JOYSTICK_CONFIG.TRIGGER_AREA_RATIO;
+            if (pointer.x <= triggerWidth) {
                 this.createDynamicJoystick(pointer.x, pointer.y);
                 this.startJoystickDrag(pointer);
                 
