@@ -310,6 +310,8 @@ export default class HUD {
     
     // 显示特殊效果消息
     showPowerupMessage(powerupType, isCorrect = true) {
+        console.log('HUD.showPowerupMessage called:', powerupType, isCorrect);
+        
         const color = isCorrect ? UI_CONFIG.COLORS.PRIMARY : UI_CONFIG.COLORS.SECONDARY;
         const prefix = isCorrect ? '✓ ' : '○ ';
         
@@ -340,6 +342,8 @@ export default class HUD {
     
     // 显示数学题结果
     showMathResult(isCorrect, rewardText) {
+        console.log('HUD.showMathResult called:', isCorrect, rewardText);
+        
         const color = isCorrect ? UI_CONFIG.COLORS.PRIMARY : UI_CONFIG.COLORS.SECONDARY;
         const resultText = isCorrect ? '答对了！' : '答错了！';
         

@@ -3,6 +3,7 @@ import Enemy from '../objects/Enemy.js';
 import { BulletManager } from '../objects/Bullet.js';
 import Missile from '../objects/Missile.js';
 import EffectSystem from '../systems/EffectSystem.js';
+import MathSystem from '../systems/MathSystem.js';
 import HUD from '../ui/HUD.js';
 import { GAME_CONFIG, POWERUP_CONFIG } from '../utils/Constants.js';
 
@@ -69,6 +70,10 @@ export default class GameScene extends Phaser.Scene {
         
         // 初始化特效系统
         this.effectSystem = new EffectSystem(this);
+        
+        // 初始化数学题系统
+        this.mathSystem = new MathSystem(this);
+        this.mathSystem.setGradeLevel(this.gradeLevel);
         
         // 初始化HUD系统
         this.hud = new HUD(this);
@@ -159,6 +164,9 @@ export default class GameScene extends Phaser.Scene {
             const key = this.input.keyboard.addKey(`DIGIT${i}`);
             key.on('down', () => {
                 this.gradeLevel = i;
+                this.mathSystem.setGradeLevel(i);
+                this.gameState.gradeLevel = i;
+                this.showMessage(`切换到难度等级: G${i}`, '#ffaa00');
                 console.log(`切换到难度等级: G${i}`);
             });
         }
@@ -213,8 +221,8 @@ export default class GameScene extends Phaser.Scene {
         // 玩家拾取道具
         this.effectSystem.createCollectEffect(powerup.x, powerup.y);
         
-        // 触发数学题（这里暂时直接给予奖励）
-        this.applyPowerupEffect(powerup.powerType);
+        // 触发数学题系统
+        this.mathSystem.showQuestion(powerup.powerType);
         
         powerup.destroy();
     }
@@ -336,6 +344,26 @@ export default class GameScene extends Phaser.Scene {
         this.bulletManager.enemyBullets.forEach(bullet => {
             if (bullet.active) bullet.hit();
         });
+    }
+    
+    clearSomeEnemies(percentage = 0.3) {
+        // 清除部分敌机（用于答错题的安慰奖励）
+        const enemies = this.enemies.children.entries.filter(enemy => enemy.active);
+        const clearCount = Math.floor(enemies.length * percentage);
+        
+        for (let i = 0; i < clearCount; i++) {
+            const enemy = enemies[i];
+            if (enemy && enemy.active) {
+                // 创建爆炸效果
+                this.effectSystem.createExplosion(enemy.x, enemy.y);
+                
+                // 增加分数
+                this.addScore(enemy.scoreValue);
+                
+                // 销毁敌机
+                enemy.destroy();
+            }
+        }
     }
     
     addScore(points) {
