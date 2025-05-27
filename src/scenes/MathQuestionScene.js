@@ -1,4 +1,5 @@
 import { POWERUP_CONFIG, UI_CONFIG } from '../utils/Constants.js';
+import TouchKeyboard from '../ui/TouchKeyboard.js';
 
 export default class MathQuestionScene extends Phaser.Scene {
     constructor() {
@@ -13,6 +14,13 @@ export default class MathQuestionScene extends Phaser.Scene {
         this.answered = false;
         this.autoSubmitTimer = null; // 自动提交计时器
         this.autoSubmitCountdown = null; // 自动提交倒计时显示
+        this.isMobile = this.detectMobile(); // 检测移动设备
+        this.touchKeyboard = null; // 触摸键盘
+    }
+    
+    detectMobile() {
+        return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
     }
 
     create() {
@@ -42,6 +50,41 @@ export default class MathQuestionScene extends Phaser.Scene {
             strokeThickness: 2
         }).setOrigin(0.5);
         
+        // 根据设备类型创建不同的输入方式
+        if (this.isMobile) {
+            // 移动设备：使用触摸键盘
+            this.createTouchInput();
+        } else {
+            // 桌面设备：使用传统输入框
+            this.createDesktopInput();
+        }
+        
+        // 添加倒计时
+        this.createTimer();
+    }
+    
+    createTouchInput() {
+        // 创建答案显示区域
+        this.answerDisplay = this.add.rectangle(300, 400, 120, 50, 0x333333, 1);
+        this.answerDisplay.setStrokeStyle(3, 0xff6600, 1);
+        
+        this.answerText = this.add.text(300, 400, '?', {
+            fontSize: '24px',
+            color: '#00ff00',
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        
+        // 创建触摸键盘
+        this.touchKeyboard = new TouchKeyboard(this, 300, 550, (value) => {
+            this.handleTouchInput(value);
+        });
+        
+        // 显示键盘
+        this.touchKeyboard.show();
+    }
+    
+    createDesktopInput() {
         // 创建输入框（使用DOM元素）
         this.inputElement = this.add.dom(300, 400).createFromHTML(`
             <input type="number" id="mathInput" placeholder="?" style="
@@ -93,9 +136,15 @@ export default class MathQuestionScene extends Phaser.Scene {
                 });
             }
         });
+    }
+    
+    handleTouchInput(value) {
+        // 更新显示
+        this.answerText.setText(value.toString());
         
-        // 添加倒计时
-        this.createTimer();
+        // 自动提交答案
+        this.userAnswer = value;
+        this.submitAnswer();
     }
     
     createTimer() {
@@ -176,8 +225,16 @@ export default class MathQuestionScene extends Phaser.Scene {
             this.autoSubmitTimer = null;
         }
         
-        const input = document.getElementById('mathInput');
-        const userAnswer = parseInt(input.value);
+        let userAnswer;
+        
+        if (this.isMobile && this.userAnswer !== undefined) {
+            // 触摸输入
+            userAnswer = this.userAnswer;
+        } else {
+            // 桌面输入
+            const input = document.getElementById('mathInput');
+            userAnswer = input ? parseInt(input.value) : NaN;
+        }
         
         // 如果没有输入或输入无效，视为答错
         const isCorrect = !isNaN(userAnswer) && userAnswer === (this.question?.answer || 0);
@@ -204,6 +261,12 @@ export default class MathQuestionScene extends Phaser.Scene {
         const input = document.getElementById('mathInput');
         if (input) {
             input.remove();
+        }
+        
+        // 清理触摸键盘
+        if (this.touchKeyboard) {
+            this.touchKeyboard.destroy();
+            this.touchKeyboard = null;
         }
         
         // 清理计时器
