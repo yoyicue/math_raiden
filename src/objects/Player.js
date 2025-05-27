@@ -18,6 +18,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.cursors = scene.input.keyboard.createCursorKeys();
         this.wasdKeys = scene.input.keyboard.addKeys('W,S,A,D');
         
+        // 触摸控制支持
+        this.touchControls = null;
+        
         // 射击定时器
         this.lastShot = 0;
         this.lastMissile = 0;
@@ -65,24 +68,33 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         let velocityX = 0;
         let velocityY = 0;
         
-        // 方向键控制
-        if (this.cursors.left.isDown || this.wasdKeys.A.isDown) {
-            velocityX = -this.speed;
-        }
-        if (this.cursors.right.isDown || this.wasdKeys.D.isDown) {
-            velocityX = this.speed;
-        }
-        if (this.cursors.up.isDown || this.wasdKeys.W.isDown) {
-            velocityY = -this.speed;
-        }
-        if (this.cursors.down.isDown || this.wasdKeys.S.isDown) {
-            velocityY = this.speed;
-        }
-        
-        // 对角线移动速度修正
-        if (velocityX !== 0 && velocityY !== 0) {
-            velocityX *= 0.707; // 1/√2
-            velocityY *= 0.707;
+        // 触摸控制优先
+        if (this.touchControls && this.touchControls.isActive) {
+            const touchInput = this.touchControls.getInput();
+            if (touchInput.isActive) {
+                velocityX = touchInput.x * this.speed;
+                velocityY = touchInput.y * this.speed;
+            }
+        } else {
+            // 键盘控制作为备选
+            if (this.cursors.left.isDown || this.wasdKeys.A.isDown) {
+                velocityX = -this.speed;
+            }
+            if (this.cursors.right.isDown || this.wasdKeys.D.isDown) {
+                velocityX = this.speed;
+            }
+            if (this.cursors.up.isDown || this.wasdKeys.W.isDown) {
+                velocityY = -this.speed;
+            }
+            if (this.cursors.down.isDown || this.wasdKeys.S.isDown) {
+                velocityY = this.speed;
+            }
+            
+            // 对角线移动速度修正（仅键盘控制需要）
+            if (velocityX !== 0 && velocityY !== 0) {
+                velocityX *= 0.707; // 1/√2
+                velocityY *= 0.707;
+            }
         }
         
         this.setVelocity(velocityX, velocityY);
@@ -355,6 +367,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
             this.invulnerabilityEffect.destroy();
             this.invulnerabilityEffect = null;
         }
+    }
+    
+    // 设置触摸控制器
+    setTouchControls(touchControls) {
+        this.touchControls = touchControls;
     }
     
     // 获取玩家状态信息
