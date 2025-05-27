@@ -117,8 +117,9 @@ export default class Missile extends Phaser.Physics.Arcade.Sprite {
         if (this.target && this.target.active) {
             this.trackTarget();
         } else {
-            // 没有目标时继续直线飞行
-            this.scene.physics.velocityFromRotation(this.physicsRotation, this.speed, this.body.velocity);
+            // 没有目标时继续直线飞行（向上）
+            this.setVelocity(0, -this.speed);
+            this.physicsRotation = -Math.PI / 2; // 向上
             this.updateVisualRotation();
         }
         
@@ -140,37 +141,28 @@ export default class Missile extends Phaser.Physics.Arcade.Sprite {
             return;
         }
         
-        // 计算到目标的角度
-        const targetAngle = Phaser.Math.Angle.Between(
-            this.x, this.y,
-            this.target.x, this.target.y
-        );
+        // 使用类似demo.html的直接追踪算法
+        const dx = this.target.x + this.target.width / 2 - this.x;
+        const dy = this.target.y + this.target.height / 2 - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
         
-        // 计算角度差
-        const angleDiff = Phaser.Math.Angle.ShortestBetween(
-            this.physicsRotation * Phaser.Math.RAD_TO_DEG,
-            targetAngle * Phaser.Math.RAD_TO_DEG
-        );
-        
-        // 平滑转向目标
-        const oldRotation = this.physicsRotation;
-        this.physicsRotation = Phaser.Math.Angle.RotateTo(
-            this.physicsRotation,
-            targetAngle,
-            this.turnSpeed * 0.017 // 约60fps时的弧度/帧
-        );
-        
-        // 调试信息（每2秒输出一次，避免刷屏）
-        if (this.scene.time.now % 2000 < 16) {
-            const distance = Phaser.Math.Distance.Between(this.x, this.y, this.target.x, this.target.y);
-            console.log(`导弹追踪: 距离=${distance.toFixed(1)}, 角度差=${angleDiff.toFixed(1)}°`);
+        if (distance > 0) {
+            // 直接计算单位向量并应用速度
+            const unitX = dx / distance;
+            const unitY = dy / distance;
+            
+            // 直接设置速度向量，实现快速转向
+            this.setVelocity(unitX * this.speed, unitY * this.speed);
+            
+            // 计算视觉旋转角度
+            this.physicsRotation = Math.atan2(dy, dx);
+            this.updateVisualRotation();
+            
+            // 调试信息（每2秒输出一次，避免刷屏）
+            if (this.scene.time.now % 2000 < 16) {
+                console.log(`导弹追踪: 距离=${distance.toFixed(1)}, 目标位置=(${this.target.x.toFixed(1)}, ${this.target.y.toFixed(1)})`);
+            }
         }
-        
-        // 根据物理角度设置速度
-        this.scene.physics.velocityFromRotation(this.physicsRotation, this.speed, this.body.velocity);
-        
-        // 更新视觉旋转
-        this.updateVisualRotation();
     }
     
     updateVisualRotation() {
