@@ -5,40 +5,46 @@ import Missile from '../objects/Missile.js';
 import EffectSystem from '../systems/EffectSystem.js';
 import MathSystem from '../systems/MathSystem.js';
 import HUD from '../ui/HUD.js';
+import TouchControls from '../ui/TouchControls.js';
 import { GAME_CONFIG, POWERUP_CONFIG } from '../utils/Constants.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
         super({ key: 'GameScene' });
+        
+        this.gradeLevel = 1; // 默认难度等级
     }
 
     init(data) {
+        // 接收从其他场景传递的数据
         this.gradeLevel = data.gradeLevel || 1;
-        console.log('游戏开始，难度等级:', this.gradeLevel);
         
-        // 游戏状态
+        // 初始化游戏状态
         this.gameState = {
             score: 0,
             lives: 3,
             shield: 0,
             weaponLevel: 1,
             missiles: 0,
-            enemiesDefeated: 0,
             paused: false,
-            gameOver: false
+            gameOver: false,
+            enemiesDefeated: 0,
+            gradeLevel: this.gradeLevel
         };
         
-        this.gameStartTime = this.time.now;
+        // 记录游戏开始时间
+        this.gameStartTime = 0;
+        
+        console.log('游戏场景初始化，难度等级:', this.gradeLevel);
     }
 
     create() {
-        // 背景
-        this.add.rectangle(300, 400, 600, 800, 0x001122);
+        this.gameStartTime = this.time.now;
         
-        // 星空背景
+        // 创建星空背景
         this.createStarField();
         
-        // 初始化系统
+        // 初始化各个系统
         this.initializeSystems();
         
         // 创建游戏对象
@@ -47,7 +53,7 @@ export default class GameScene extends Phaser.Scene {
         // 设置碰撞检测
         this.setupCollisions();
         
-        // 键盘控制
+        // 设置输入控制
         this.setupInput();
         
         // 敌机生成定时器
@@ -78,6 +84,9 @@ export default class GameScene extends Phaser.Scene {
         // 初始化HUD系统
         this.hud = new HUD(this);
         
+        // 初始化触摸控制系统
+        this.touchControls = new TouchControls(this);
+        
         // 创建敌机组
         this.enemies = this.add.group();
         
@@ -92,11 +101,73 @@ export default class GameScene extends Phaser.Scene {
         // 创建玩家
         this.player = new Player(this, GAME_CONFIG.WIDTH / 2, GAME_CONFIG.HEIGHT - 100);
         
+        // 设置玩家的触摸控制
+        this.player.setTouchControls(this.touchControls);
+        
+        // 在移动设备上创建控制模式切换按钮
+        if (this.touchControls && this.touchControls.isMobile) {
+            this.createControlModeButton();
+        }
+        
         // 同步游戏状态
         this.syncGameState();
         
         // 更新HUD显示
         this.updateHUD();
+    }
+    
+    createControlModeButton() {
+        const gameWidth = this.game.config.width;
+        const gameHeight = this.game.config.height;
+        
+        // 创建切换按钮（左上角，避免与右上角HUD重叠）
+        this.controlModeButton = this.add.rectangle(40, 40, 60, 30, 0x333333, 0.8);
+        this.controlModeButton.setStrokeStyle(2, 0x00ff00, 1);
+        this.controlModeButton.setScrollFactor(0);
+        this.controlModeButton.setDepth(2000);
+        this.controlModeButton.setInteractive({ useHandCursor: true });
+        
+        // 按钮文本
+        this.controlModeText = this.add.text(40, 40, '摇杆', {
+            fontSize: '12px',
+            fontFamily: 'Arial',
+            color: '#00ff00',
+            fontStyle: 'bold'
+        });
+        this.controlModeText.setOrigin(0.5);
+        this.controlModeText.setScrollFactor(0);
+        this.controlModeText.setDepth(2001);
+        
+        // 按钮交互效果
+        this.controlModeButton.on('pointerover', () => {
+            this.controlModeButton.setFillStyle(0x555555, 0.9);
+            this.controlModeButton.setScale(1.1);
+            this.controlModeText.setScale(1.1);
+        });
+        
+        this.controlModeButton.on('pointerout', () => {
+            this.controlModeButton.setFillStyle(0x333333, 0.8);
+            this.controlModeButton.setScale(1);
+            this.controlModeText.setScale(1);
+        });
+        
+        this.controlModeButton.on('pointerdown', () => {
+            this.toggleTouchControlMode();
+        });
+    }
+    
+    updateControlModeButtonText() {
+        if (!this.controlModeText || !this.touchControls) return;
+        
+        const modes = TouchControls.getAvailableModes();
+        const currentMode = this.touchControls.getControlMode();
+        
+        const modeTexts = {
+            [modes.JOYSTICK]: '摇杆',
+            [modes.TOUCH]: '触屏'
+        };
+        
+        this.controlModeText.setText(modeTexts[currentMode]);
     }
     
     setupCollisions() {
@@ -159,6 +230,12 @@ export default class GameScene extends Phaser.Scene {
             this.togglePause();
         });
         
+        // T键切换触屏控制模式（临时测试用）
+        this.touchModeKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+        this.touchModeKey.on('down', () => {
+            this.toggleTouchControlMode();
+        });
+        
         // 数字键切换难度
         for (let i = 1; i <= 3; i++) {
             const key = this.input.keyboard.addKey(`DIGIT${i}`);
@@ -170,6 +247,32 @@ export default class GameScene extends Phaser.Scene {
                 console.log(`切换到难度等级: G${i}`);
             });
         }
+    }
+    
+    toggleTouchControlMode() {
+        if (!this.touchControls || !this.touchControls.isMobile) {
+            this.showMessage('触屏控制仅在移动设备上可用', '#ff4444');
+            return;
+        }
+        
+        const modes = TouchControls.getAvailableModes();
+        const currentMode = this.touchControls.getControlMode();
+        
+        // 切换模式
+        const newMode = currentMode === modes.JOYSTICK ? modes.TOUCH : modes.JOYSTICK;
+        this.touchControls.setControlMode(newMode);
+        
+        // 更新按钮文本
+        this.updateControlModeButtonText();
+        
+        // 显示切换信息
+        const modeNames = {
+            [modes.JOYSTICK]: '虚拟摇杆模式',
+            [modes.TOUCH]: '单指触屏模式'
+        };
+        
+        this.showMessage(`切换到: ${modeNames[newMode]}`, '#00ff00');
+        console.log(`触屏控制模式切换到: ${modeNames[newMode]}`);
     }
     
     spawnEnemy() {
@@ -429,6 +532,11 @@ export default class GameScene extends Phaser.Scene {
                 this.hud.showMessage('游戏继续', '#00ff00');
             }
         }
+        
+        // 同步触屏暂停按钮状态
+        if (this.touchControls && this.touchControls.setPaused) {
+            this.touchControls.setPaused(this.gameState.paused);
+        }
     }
     
     gameOver() {
@@ -500,12 +608,5 @@ export default class GameScene extends Phaser.Scene {
         
         // 更新HUD
         this.updateHUD();
-        
-        // 清理离开屏幕的道具
-        this.powerups.children.entries.forEach(powerup => {
-            if (powerup.y > GAME_CONFIG.HEIGHT + 50) {
-                powerup.destroy();
-            }
-        });
     }
 } 
