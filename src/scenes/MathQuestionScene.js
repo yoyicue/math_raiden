@@ -18,21 +18,21 @@ export default class MathQuestionScene extends Phaser.Scene {
         this.add.rectangle(300, 400, 600, 800, 0x000000, 0.8);
         
         // 模态框背景
-        const modalBg = this.add.rectangle(300, 400, 400, 280, 0x000000, 0.9);
+        const modalBg = this.add.rectangle(300, 400, 400, 320, 0x000000, 0.9);
         modalBg.setStrokeStyle(3, 0xff6600);
         
         // 道具类型显示
         const powerupName = this.getPowerupName(this.powerType);
-        this.add.text(300, 300, powerupName, {
-            fontSize: '24px',
+        this.add.text(300, 280, powerupName, {
+            fontSize: '22px',
             color: '#ff6600',
             fontFamily: 'Arial',
             fontStyle: 'bold'
         }).setOrigin(0.5);
         
         // 题目显示
-        this.questionText = this.add.text(300, 380, this.question?.question || '2 + 3 = ?', {
-            fontSize: '36px',
+        this.questionText = this.add.text(300, 340, this.question?.question || '2 + 3 = ?', {
+            fontSize: '32px',
             color: '#ffffff',
             fontFamily: 'Arial',
             fontStyle: 'bold',
@@ -41,27 +41,27 @@ export default class MathQuestionScene extends Phaser.Scene {
         }).setOrigin(0.5);
         
         // 创建输入框（使用DOM元素）
-        this.inputElement = this.add.dom(300, 430).createFromHTML(`
+        this.inputElement = this.add.dom(300, 400).createFromHTML(`
             <input type="number" id="mathInput" placeholder="?" style="
-                font-size: 28px; 
-                width: 140px; 
-                height: 60px;
+                font-size: 24px; 
+                width: 120px; 
+                height: 50px;
                 text-align: center;
                 background: #222;
                 color: #fff;
                 border: 3px solid #ff6600;
                 border-radius: 8px;
-                padding: 10px;
+                padding: 8px;
                 outline: none;
                 box-shadow: 0 0 10px rgba(255, 102, 0, 0.3);
             ">
         `);
         
         // 提交按钮
-        const submitButton = this.add.rectangle(300, 500, 120, 45, 0xff6600);
+        const submitButton = this.add.rectangle(300, 470, 120, 40, 0xff6600);
         submitButton.setStrokeStyle(2, 0xff8800);
-        const submitText = this.add.text(300, 500, '确定', {
-            fontSize: '18px',
+        const submitText = this.add.text(300, 470, '确定', {
+            fontSize: '16px',
             color: '#ffffff',
             fontFamily: 'Arial',
             fontStyle: 'bold'
@@ -94,8 +94,8 @@ export default class MathQuestionScene extends Phaser.Scene {
     createTimer() {
         // 20秒倒计时
         this.timeLeft = 20;
-        this.timerText = this.add.text(420, 300, `${this.timeLeft}s`, {
-            fontSize: '18px',
+        this.timerText = this.add.text(420, 280, `${this.timeLeft}s`, {
+            fontSize: '16px',
             color: '#ffff00',
             fontFamily: 'Arial',
             fontStyle: 'bold'
@@ -157,12 +157,12 @@ export default class MathQuestionScene extends Phaser.Scene {
     }
     
     showResult(isCorrect, callback) {
-        // 创建结果显示
-        const resultBg = this.add.rectangle(300, 400, 250, 80, isCorrect ? 0x00aa00 : 0xaa0000, 0.9);
+        // 创建结果显示（位置避开输入框）
+        const resultBg = this.add.rectangle(300, 520, 250, 70, isCorrect ? 0x00aa00 : 0xaa0000, 0.9);
         resultBg.setStrokeStyle(3, isCorrect ? 0x00ff00 : 0xff0000);
         
-        const resultText = this.add.text(300, 400, isCorrect ? '✓ 正确' : '✗ 错误', {
-            fontSize: '28px',
+        const resultText = this.add.text(300, 520, isCorrect ? '✓ 正确' : '✗ 错误', {
+            fontSize: '24px',
             color: '#ffffff',
             fontFamily: 'Arial',
             fontStyle: 'bold'
