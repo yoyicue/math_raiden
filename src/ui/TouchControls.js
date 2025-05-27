@@ -95,17 +95,22 @@ export default class TouchControls {
         const gameWidth = this.scene.game.config.width;
         const gameHeight = this.scene.game.config.height;
         
+        // 动态计算摇杆位置，确保不会超出屏幕
+        const margin = Math.max(JOYSTICK_CONFIG.MARGIN, gameWidth * 0.05); // 动态边距
+        const radius = Math.min(JOYSTICK_CONFIG.RADIUS, gameWidth * 0.12); // 动态半径
+        
         // 摇杆位置（左下角）
-        const joystickX = JOYSTICK_CONFIG.RADIUS + JOYSTICK_CONFIG.MARGIN;
-        const joystickY = gameHeight - JOYSTICK_CONFIG.RADIUS - JOYSTICK_CONFIG.MARGIN;
+        const joystickX = radius + margin;
+        const joystickY = gameHeight - radius - margin;
         
         this.joystickCenter = { x: joystickX, y: joystickY };
+        this.joystickRadius = radius; // 保存动态半径供后续使用
         
         // 创建摇杆底座
         this.joystickBase = this.scene.add.circle(
             joystickX, 
             joystickY, 
-            JOYSTICK_CONFIG.RADIUS, 
+            radius, 
             JOYSTICK_CONFIG.COLORS.BASE, 
             0.6
         );
@@ -115,10 +120,11 @@ export default class TouchControls {
         this.joystickBase.setInteractive();
         
         // 创建摇杆按钮
+        const knobRadius = Math.min(JOYSTICK_CONFIG.KNOB_RADIUS, radius * 0.4); // 动态按钮半径
         this.joystickKnob = this.scene.add.circle(
             joystickX, 
             joystickY, 
-            JOYSTICK_CONFIG.KNOB_RADIUS, 
+            knobRadius, 
             JOYSTICK_CONFIG.COLORS.KNOB, 
             0.8
         );
@@ -221,7 +227,7 @@ export default class TouchControls {
             this.joystickCenter.x, 
             this.joystickCenter.y
         );
-        return distance <= JOYSTICK_CONFIG.RADIUS;
+        return distance <= (this.joystickRadius || JOYSTICK_CONFIG.RADIUS);
     }
     
     startJoystickDrag(pointer) {
@@ -234,16 +240,17 @@ export default class TouchControls {
         const deltaX = pointer.x - this.joystickCenter.x;
         const deltaY = pointer.y - this.joystickCenter.y;
         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        const radius = this.joystickRadius || JOYSTICK_CONFIG.RADIUS;
         
         let knobX, knobY;
         
-        if (distance <= JOYSTICK_CONFIG.RADIUS) {
+        if (distance <= radius) {
             // 在摇杆范围内，直接使用指针位置
             knobX = pointer.x;
             knobY = pointer.y;
         } else {
             // 超出范围，限制在边界上
-            const ratio = JOYSTICK_CONFIG.RADIUS / distance;
+            const ratio = radius / distance;
             knobX = this.joystickCenter.x + deltaX * ratio;
             knobY = this.joystickCenter.y + deltaY * ratio;
         }
@@ -280,10 +287,11 @@ export default class TouchControls {
     calculateJoystickVector(knobX, knobY) {
         const deltaX = knobX - this.joystickCenter.x;
         const deltaY = knobY - this.joystickCenter.y;
+        const radius = this.joystickRadius || JOYSTICK_CONFIG.RADIUS;
         
         // 归一化到 -1 到 1 的范围
-        this.touchInput.x = deltaX / JOYSTICK_CONFIG.RADIUS;
-        this.touchInput.y = deltaY / JOYSTICK_CONFIG.RADIUS;
+        this.touchInput.x = deltaX / radius;
+        this.touchInput.y = deltaY / radius;
         this.touchInput.isActive = true;
     }
     

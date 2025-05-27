@@ -17,6 +17,14 @@
     
     <title>数学雷电</title>
     <style>
+        /* 安全区域变量 */
+        :root {
+            --sat: env(safe-area-inset-top, 0px);
+            --sab: env(safe-area-inset-bottom, 0px);
+            --sal: env(safe-area-inset-left, 0px);
+            --sar: env(safe-area-inset-right, 0px);
+        }
+        
         /* 重置所有默认样式 */
         * {
             margin: 0;
@@ -51,6 +59,12 @@
             justify-content: center;
             align-items: center;
             background: #000;
+            
+            /* 移动端安全区域处理 */
+            padding-top: var(--sat);
+            padding-bottom: var(--sab);
+            padding-left: var(--sal);
+            padding-right: var(--sar);
         }
         
         /* 桌面端样式 */

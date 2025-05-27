@@ -17,11 +17,38 @@ function getGameDimensions() {
     const isMobile = window.innerWidth <= 768;
     
     if (isMobile) {
-        // 移动端：使用实际屏幕尺寸
-        return {
-            width: containerWidth,
-            height: containerHeight
-        };
+        // 移动端：使用可视区域尺寸，考虑浏览器UI
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // 检测是否有安全区域支持
+        const safeAreaInsetTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0');
+        const safeAreaInsetBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab') || '0');
+        
+        // 为移动端浏览器UI预留空间
+        const reservedTop = Math.max(safeAreaInsetTop, 20); // 状态栏预留，最少20px
+        const reservedBottom = Math.max(safeAreaInsetBottom, 30); // 底部预留，最少30px
+        
+        // 计算可用尺寸
+        const availableWidth = viewportWidth;
+        const availableHeight = viewportHeight - reservedTop - reservedBottom;
+        
+        // 确保最小尺寸
+        const minWidth = 320;
+        const minHeight = 480;
+        
+        const width = Math.max(Math.min(availableWidth, containerWidth), minWidth);
+        const height = Math.max(Math.min(availableHeight, containerHeight), minHeight);
+        
+        console.log('移动端尺寸计算:', {
+            viewport: { width: viewportWidth, height: viewportHeight },
+            container: { width: containerWidth, height: containerHeight },
+            safeArea: { top: reservedTop, bottom: reservedBottom },
+            available: { width: availableWidth, height: availableHeight },
+            final: { width, height }
+        });
+        
+        return { width, height };
     } else {
         // 桌面端：保持16:9比例，最大不超过容器尺寸
         const aspectRatio = 9 / 16; // 竖屏游戏

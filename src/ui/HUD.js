@@ -25,8 +25,13 @@ export default class HUD {
     }
     
     createGameInfoPanel() {
-        const x = 20;
-        const y = 20;
+        // 使用相对边距，确保在小屏幕上不会超出
+        const gameWidth = this.scene.game.config.width;
+        const gameHeight = this.scene.game.config.height;
+        const margin = Math.max(10, Math.min(20, gameWidth * 0.03)); // 动态边距，最小10px，最大20px
+        
+        const x = margin;
+        const y = margin;
         
         // 背景面板
         this.elements.gameInfoBg = this.scene.add.rectangle(x + 80, y + 60, 160, 120, 0x000000, 0.7);
@@ -97,8 +102,12 @@ export default class HUD {
     }
     
     createPowerupInfoPanel() {
-        const x = this.scene.game.config.width - 20;
-        const y = 20;
+        const gameWidth = this.scene.game.config.width;
+        const gameHeight = this.scene.game.config.height;
+        const margin = Math.max(10, Math.min(20, gameWidth * 0.03)); // 动态边距
+        
+        const x = gameWidth - margin;
+        const y = margin;
         
         // 背景面板
         this.elements.powerupInfoBg = this.scene.add.rectangle(x - 80, y + 40, 160, 80, 0x000000, 0.7);
@@ -188,9 +197,12 @@ export default class HUD {
     
     createMessageArea() {
         // 消息显示区域（屏幕中上部）
+        const gameHeight = this.scene.game.config.height;
+        const messageY = Math.max(80, gameHeight * 0.15); // 动态位置，最小80px
+        
         this.elements.messageArea = this.scene.add.container(
             this.scene.game.config.width / 2,
-            100
+            messageY
         );
         this.elements.messageArea.setDepth(50);
     }

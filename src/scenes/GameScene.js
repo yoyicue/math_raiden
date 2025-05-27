@@ -102,8 +102,12 @@ export default class GameScene extends Phaser.Scene {
         const gameWidth = this.game.config.width;
         const gameHeight = this.game.config.height;
         
+        // 动态计算玩家初始位置，确保不会太靠近边缘
+        const bottomMargin = Math.max(80, gameHeight * 0.15); // 动态底部边距
+        const playerY = gameHeight - bottomMargin;
+        
         // 创建玩家
-        this.player = new Player(this, gameWidth / 2, gameHeight - 100);
+        this.player = new Player(this, gameWidth / 2, playerY);
         
         // 设置玩家的触摸控制
         this.player.setTouchControls(this.touchControls);

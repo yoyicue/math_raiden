@@ -34,6 +34,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.setSize(30, 30);
         this.setDrag(300); // 添加阻力，使移动更平滑
         
+        // 设置自定义移动边界（考虑移动端UI）
+        this.setupMovementBounds();
+        
         // 设置玩家外观
         this.setTint(0x00ff00);
         
@@ -43,6 +46,33 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         
         // 创建护盾效果
         this.createShieldEffect();
+    }
+    
+    setupMovementBounds() {
+        // 获取游戏尺寸
+        const gameWidth = this.scene.game.config.width;
+        const gameHeight = this.scene.game.config.height;
+        
+        // 检测是否为移动设备
+        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                         (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+        
+        // 计算安全边界
+        const sideMargin = 10; // 左右边距保持较小
+        const topMargin = 10; // 顶部边距
+        
+        // 底部边距 - 统一使用最小边距，不避让摇杆
+        const bottomMargin = 15; // 只保留基本的边距，防止完全贴边
+        
+        // 设置自定义边界
+        this.movementBounds = {
+            left: sideMargin,
+            right: gameWidth - sideMargin,
+            top: topMargin,
+            bottom: gameHeight - bottomMargin
+        };
+        
+        console.log('Player movement bounds:', this.movementBounds, 'isMobile:', isMobile);
     }
     
     update() {
@@ -98,6 +128,33 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         }
         
         this.setVelocity(velocityX, velocityY);
+        
+        // 应用自定义边界限制
+        this.applyMovementBounds();
+    }
+    
+    applyMovementBounds() {
+        if (!this.movementBounds) return;
+        
+        // 限制玩家位置在安全边界内
+        const currentX = this.x;
+        const currentY = this.y;
+        
+        let newX = Phaser.Math.Clamp(currentX, this.movementBounds.left, this.movementBounds.right);
+        let newY = Phaser.Math.Clamp(currentY, this.movementBounds.top, this.movementBounds.bottom);
+        
+        // 如果位置被限制，更新玩家位置并停止相应方向的速度
+        if (newX !== currentX || newY !== currentY) {
+            this.setPosition(newX, newY);
+            
+            // 如果撞到边界，停止相应方向的速度
+            if (newX !== currentX) {
+                this.setVelocityX(0);
+            }
+            if (newY !== currentY) {
+                this.setVelocityY(0);
+            }
+        }
     }
     
     handleShooting() {
@@ -355,6 +412,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.weaponLevel = 1;
         this.missiles = 0;
         this.invulnerable = 0;
+        
+        // 重新设置移动边界（以防游戏尺寸变化）
+        this.setupMovementBounds();
         
         // 重新创建护盾效果
         if (this.shieldEffect) {
