@@ -71,10 +71,20 @@ export default class MathSystem {
     }
     
     showQuestion(powerType) {
+        console.log('MathSystem.showQuestion called with powerType:', powerType);
+        
+        // 检查是否已有活跃的数学题
+        if (this.isQuestionActive()) {
+            console.warn('MathSystem: 已有活跃的数学题，忽略新的题目请求');
+            return;
+        }
+        
         // 生成新题目
         this.currentQuestion = this.generateQuestion(this.gradeLevel);
         this.currentPowerType = powerType;
         this.questionCount++;
+        
+        console.log('Generated question:', this.currentQuestion);
         
         // 暂停游戏物理
         this.scene.physics.pause();

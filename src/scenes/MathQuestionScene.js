@@ -193,6 +193,8 @@ export default class MathQuestionScene extends Phaser.Scene {
         if (this.answered) return; // 防止重复提交
         this.answered = true;
         
+        console.log('MathQuestionScene.submitAnswer called');
+        
         // 停止计时器
         if (this.timerEvent) {
             this.timerEvent.destroy();
@@ -204,6 +206,8 @@ export default class MathQuestionScene extends Phaser.Scene {
         // 如果没有输入或输入无效，视为答错
         const isCorrect = !isNaN(userAnswer) && userAnswer === (this.question?.answer || 0);
         
+        console.log('User answer:', userAnswer, 'Correct answer:', this.question?.answer, 'Is correct:', isCorrect);
+        
         // 显示结果动画
         this.showResult(isCorrect, () => {
             // 关闭场景
@@ -211,6 +215,7 @@ export default class MathQuestionScene extends Phaser.Scene {
             
             // 调用回调函数
             if (this.callback) {
+                console.log('Calling callback with:', userAnswer, isCorrect);
                 this.callback(userAnswer, isCorrect);
             }
         });
