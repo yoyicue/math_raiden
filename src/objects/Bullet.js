@@ -40,10 +40,15 @@ export default class Bullet extends Phaser.Physics.Arcade.Sprite {
         this.angle = angle;
         
         // 设置速度
-        const velocityX = Math.sin(angle) * this.speed;
-        const velocityY = this.isPlayer ? -this.speed : Math.cos(angle) * this.speed;
-        
-        this.setVelocity(velocityX, velocityY);
+        if (this.isPlayer) {
+            // 玩家子弹向上飞行
+            this.setVelocity(0, -this.speed);
+        } else {
+            // 敌机子弹根据角度飞行（向玩家方向）
+            const velocityX = Math.cos(angle) * this.speed;
+            const velocityY = Math.sin(angle) * this.speed;
+            this.setVelocity(velocityX, velocityY);
+        }
         
         // 设置旋转
         this.setRotation(angle);
