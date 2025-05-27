@@ -128,15 +128,20 @@ export default class GameScene extends Phaser.Scene {
         const gameWidth = this.game.config.width;
         const gameHeight = this.game.config.height;
         
+        // 动态计算按钮位置（左上角，使用动态边距）
+        const margin = Math.max(10, Math.min(20, gameWidth * 0.03)); // 动态边距
+        const buttonX = margin + 30; // 按钮中心位置
+        const buttonY = margin + 15; // 按钮中心位置
+        
         // 创建切换按钮（左上角，避免与右上角HUD重叠）
-        this.controlModeButton = this.add.rectangle(40, 40, 60, 30, 0x333333, 0.8);
+        this.controlModeButton = this.add.rectangle(buttonX, buttonY, 60, 30, 0x333333, 0.8);
         this.controlModeButton.setStrokeStyle(2, 0x00ff00, 1);
         this.controlModeButton.setScrollFactor(0);
         this.controlModeButton.setDepth(2000);
         this.controlModeButton.setInteractive({ useHandCursor: true });
         
         // 按钮文本
-        this.controlModeText = this.add.text(40, 40, '摇杆', {
+        this.controlModeText = this.add.text(buttonX, buttonY, '摇杆', {
             fontSize: '12px',
             fontFamily: 'Arial',
             color: '#00ff00',

@@ -4,14 +4,20 @@ export default class BootScene extends Phaser.Scene {
     }
 
     preload() {
+        // 获取实际游戏尺寸
+        const gameWidth = this.game.config.width;
+        const gameHeight = this.game.config.height;
+        const centerX = gameWidth / 2;
+        const centerY = gameHeight / 2;
+        
         // 显示启动信息
-        this.add.text(300, 400, '数学雷电', {
+        this.add.text(centerX, centerY - 50, '数学雷电', {
             fontSize: '32px',
             color: '#00ff00',
             fontFamily: 'Arial'
         }).setOrigin(0.5);
         
-        this.add.text(300, 450, '正在初始化...', {
+        this.add.text(centerX, centerY, '正在初始化...', {
             fontSize: '16px',
             color: '#ffffff',
             fontFamily: 'Arial'
