@@ -7,6 +7,8 @@ const JOYSTICK_CONFIG = {
     MARGIN: 30,
     DEPTH_BASE: 1000,
     DEPTH_KNOB: 1001,
+    DEAD_ZONE: 0.15, // 死区半径比例 (15%)
+    SENSITIVITY_CURVE: 1.5, // 灵敏度曲线指数
     COLORS: {
         BASE: 0x333333,
         BASE_STROKE: 0x666666,
@@ -16,32 +18,37 @@ const JOYSTICK_CONFIG = {
     },
     ANIMATION: {
         GLOW_DURATION: 1000,
-        RETURN_DURATION: 200
+        RETURN_DURATION: 200,
+        APPEAR_DURATION: 150 // 动态摇杆出现动画
     }
 };
 
 // 触屏控制模式
 const CONTROL_MODES = {
-    JOYSTICK: 'joystick',    // 虚拟摇杆模式
+    JOYSTICK: 'joystick',    // 固定摇杆模式
+    DYNAMIC_JOYSTICK: 'dynamic_joystick', // 动态摇杆模式
     TOUCH: 'touch'           // 单指触屏模式
 };
 
 export default class TouchControls {
-    constructor(scene, controlMode = CONTROL_MODES.JOYSTICK) {
+    constructor(scene, controlMode = CONTROL_MODES.DYNAMIC_JOYSTICK) {
         this.scene = scene;
         this.isActive = false;
         this.isMobile = this.detectMobile();
         this.controlMode = controlMode; // 控制模式
         
-        // 摇杆相关（仅摇杆模式使用）
+        // 摇杆相关
         this.joystickBase = null;
         this.joystickKnob = null;
         this.isDragging = false;
         this.joystickCenter = { x: 0, y: 0 };
+        this.isDynamicJoystick = false; // 是否为动态创建的摇杆
         
         // 触屏区域（仅触屏模式使用）
         this.touchArea = null;
         this.isTouch = false;
+        this.touchStartPos = { x: 0, y: 0 }; // 触摸开始位置
+        this.playerStartPos = { x: 0, y: 0 }; // 触摸开始时玩家位置
         
         // 触摸输入状态
         this.touchInput = {
@@ -60,6 +67,10 @@ export default class TouchControls {
         // 动画引用（用于清理）
         this.glowTween = null;
         this.returnTween = null;
+        this.appearTween = null; // 动态摇杆出现动画
+        
+        // 触觉反馈支持检测
+        this.hapticSupported = 'vibrate' in navigator;
         
         // 触屏暂停按钮
         this.pauseButton = null;
@@ -83,6 +94,8 @@ export default class TouchControls {
         
         if (this.controlMode === CONTROL_MODES.JOYSTICK) {
             this.createVirtualJoystick();
+        } else if (this.controlMode === CONTROL_MODES.DYNAMIC_JOYSTICK) {
+            this.createDynamicJoystickArea();
         } else if (this.controlMode === CONTROL_MODES.TOUCH) {
             this.createTouchArea();
         }
@@ -144,6 +157,24 @@ export default class TouchControls {
         });
     }
     
+    createDynamicJoystickArea() {
+        const gameWidth = this.scene.game.config.width;
+        const gameHeight = this.scene.game.config.height;
+        
+        // 创建左半屏的触摸区域用于动态摇杆
+        this.touchArea = this.scene.add.rectangle(
+            0, 0, 
+            gameWidth / 2, // 只占左半屏
+            gameHeight, 
+            0x000000, 
+            0
+        );
+        this.touchArea.setOrigin(0, 0);
+        this.touchArea.setInteractive();
+        this.touchArea.setScrollFactor(0);
+        this.touchArea.setDepth(999);
+    }
+    
     createTouchArea() {
         const gameWidth = this.scene.game.config.width;
         const gameHeight = this.scene.game.config.height;
@@ -165,6 +196,8 @@ export default class TouchControls {
     setupTouchEvents() {
         if (this.controlMode === CONTROL_MODES.JOYSTICK) {
             this.setupJoystickEvents();
+        } else if (this.controlMode === CONTROL_MODES.DYNAMIC_JOYSTICK) {
+            this.setupDynamicJoystickEvents();
         } else if (this.controlMode === CONTROL_MODES.TOUCH) {
             this.setupTouchAreaEvents();
         }
@@ -187,6 +220,37 @@ export default class TouchControls {
         this.eventListeners.pointerup = () => {
             if (this.isDragging) {
                 this.endJoystickDrag();
+            }
+        };
+        
+        // 注册事件监听器
+        this.scene.input.on('pointerdown', this.eventListeners.pointerdown);
+        this.scene.input.on('pointermove', this.eventListeners.pointermove);
+        this.scene.input.on('pointerup', this.eventListeners.pointerup);
+    }
+    
+    setupDynamicJoystickEvents() {
+        // 动态摇杆事件处理
+        this.eventListeners.pointerdown = (pointer) => {
+            // 检查是否在左半屏
+            if (pointer.x <= this.scene.game.config.width / 2) {
+                this.createDynamicJoystick(pointer.x, pointer.y);
+                this.startJoystickDrag(pointer);
+                
+                // 触觉反馈
+                this.triggerHapticFeedback(10);
+            }
+        };
+        
+        this.eventListeners.pointermove = (pointer) => {
+            if (this.isDragging && this.isDynamicJoystick) {
+                this.updateJoystick(pointer);
+            }
+        };
+        
+        this.eventListeners.pointerup = () => {
+            if (this.isDragging && this.isDynamicJoystick) {
+                this.endDynamicJoystickDrag();
             }
         };
         
@@ -263,6 +327,13 @@ export default class TouchControls {
         this.isDragging = false;
         this.joystickKnob.setTint(0xffffff);
         
+        // 如果是动态摇杆，使用特殊的结束处理
+        if (this.isDynamicJoystick) {
+            this.endDynamicJoystickDrag();
+            return;
+        }
+        
+        // 固定摇杆的回中动画
         // 清理之前的回中动画
         if (this.returnTween) {
             this.returnTween.destroy();
@@ -289,15 +360,50 @@ export default class TouchControls {
         const deltaY = knobY - this.joystickCenter.y;
         const radius = this.joystickRadius || JOYSTICK_CONFIG.RADIUS;
         
-        // 归一化到 -1 到 1 的范围
-        this.touchInput.x = deltaX / radius;
-        this.touchInput.y = deltaY / radius;
+        // 计算距离比例
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        const normalizedDistance = Math.min(distance / radius, 1);
+        
+        // 应用死区
+        if (normalizedDistance < JOYSTICK_CONFIG.DEAD_ZONE) {
+            this.touchInput.x = 0;
+            this.touchInput.y = 0;
+            this.touchInput.isActive = false;
+            return;
+        }
+        
+        // 重新映射死区外的值到 0-1 范围
+        const remappedDistance = (normalizedDistance - JOYSTICK_CONFIG.DEAD_ZONE) / 
+                                (1 - JOYSTICK_CONFIG.DEAD_ZONE);
+        
+        // 应用灵敏度曲线
+        const curvedDistance = Math.pow(remappedDistance, JOYSTICK_CONFIG.SENSITIVITY_CURVE);
+        
+        // 计算最终的输入向量
+        if (distance > 0) {
+            this.touchInput.x = (deltaX / distance) * curvedDistance;
+            this.touchInput.y = (deltaY / distance) * curvedDistance;
+        } else {
+            this.touchInput.x = 0;
+            this.touchInput.y = 0;
+        }
+        
         this.touchInput.isActive = true;
     }
     
     // 触屏模式方法
     startTouch(pointer) {
         this.isTouch = true;
+        this.touchStartPos = { x: pointer.x, y: pointer.y };
+        
+        // 记录玩家当前位置（如果可以访问）
+        if (this.scene.player) {
+            this.playerStartPos = { x: this.scene.player.x, y: this.scene.player.y };
+        }
+        
+        // 触觉反馈
+        this.triggerHapticFeedback(5);
+        
         this.updateTouch(pointer);
     }
     
@@ -305,17 +411,26 @@ export default class TouchControls {
         const gameWidth = this.scene.game.config.width;
         const gameHeight = this.scene.game.config.height;
         
-        // 将触摸位置转换为移动向量（以屏幕中心为原点）
-        const centerX = gameWidth / 2;
-        const centerY = gameHeight / 2;
+        // 相对移动模式：计算手指移动的偏移量
+        const deltaX = pointer.x - this.touchStartPos.x;
+        const deltaY = pointer.y - this.touchStartPos.y;
         
-        // 计算相对于中心的偏移，并归一化
-        this.touchInput.x = (pointer.x - centerX) / (gameWidth / 2);
-        this.touchInput.y = (pointer.y - centerY) / (gameHeight / 2);
+        // 设置灵敏度系数（可调整）
+        const sensitivity = 2.0;
+        
+        // 将偏移量转换为移动向量，并应用灵敏度
+        this.touchInput.x = (deltaX / (gameWidth * 0.3)) * sensitivity;
+        this.touchInput.y = (deltaY / (gameHeight * 0.3)) * sensitivity;
         
         // 限制范围到 -1 到 1
         this.touchInput.x = Phaser.Math.Clamp(this.touchInput.x, -1, 1);
         this.touchInput.y = Phaser.Math.Clamp(this.touchInput.y, -1, 1);
+        
+        // 应用非线性曲线，让小幅度移动更精确
+        const curve = 1.3;
+        this.touchInput.x = Math.sign(this.touchInput.x) * Math.pow(Math.abs(this.touchInput.x), curve);
+        this.touchInput.y = Math.sign(this.touchInput.y) * Math.pow(Math.abs(this.touchInput.y), curve);
+        
         this.touchInput.isActive = true;
     }
     
@@ -381,7 +496,7 @@ export default class TouchControls {
             }
         }
         
-        // 清理摇杆相关
+        // 清理所有动画
         if (this.glowTween) {
             this.glowTween.destroy();
             this.glowTween = null;
@@ -392,6 +507,12 @@ export default class TouchControls {
             this.returnTween = null;
         }
         
+        if (this.appearTween) {
+            this.appearTween.destroy();
+            this.appearTween = null;
+        }
+        
+        // 清理摇杆相关
         if (this.joystickBase) {
             this.joystickBase.destroy();
             this.joystickBase = null;
@@ -412,15 +533,22 @@ export default class TouchControls {
         this.resetTouchInput();
         this.isDragging = false;
         this.isTouch = false;
+        this.isDynamicJoystick = false;
     }
     
     // 设置可见性
     setVisible(visible) {
-        if (this.controlMode === CONTROL_MODES.JOYSTICK) {
+        if (this.controlMode === CONTROL_MODES.JOYSTICK || 
+            (this.controlMode === CONTROL_MODES.DYNAMIC_JOYSTICK && this.joystickBase)) {
             if (this.joystickBase) this.joystickBase.setVisible(visible);
             if (this.joystickKnob) this.joystickKnob.setVisible(visible);
         }
         // 触屏模式的触摸区域本身就是不可见的，无需处理
+        
+        // 暂停按钮
+        if (this.pauseButton) {
+            this.pauseButton.setVisible(visible);
+        }
     }
     
     // 创建暂停按钮
@@ -458,5 +586,81 @@ export default class TouchControls {
             pointermove: null,
             pointerup: null
         };
+    }
+
+    // 触觉反馈
+    triggerHapticFeedback(duration = 10) {
+        if (this.hapticSupported) {
+            try {
+                navigator.vibrate(duration);
+            } catch (e) {
+                // 静默失败
+            }
+        }
+    }
+
+    createDynamicJoystick(x, y) {
+        // 动态创建摇杆
+        const radius = Math.min(JOYSTICK_CONFIG.RADIUS, this.scene.game.config.width * 0.12);
+        
+        this.joystickCenter = { x, y };
+        this.joystickRadius = radius;
+        this.isDynamicJoystick = true;
+        
+        // 创建摇杆底座
+        this.joystickBase = this.scene.add.circle(
+            x, y, radius, 
+            JOYSTICK_CONFIG.COLORS.BASE, 0.3
+        );
+        this.joystickBase.setStrokeStyle(3, JOYSTICK_CONFIG.COLORS.BASE_STROKE, 0.5);
+        this.joystickBase.setScrollFactor(0);
+        this.joystickBase.setDepth(JOYSTICK_CONFIG.DEPTH_BASE);
+        this.joystickBase.setScale(0);
+        
+        // 创建摇杆按钮
+        const knobRadius = Math.min(JOYSTICK_CONFIG.KNOB_RADIUS, radius * 0.4);
+        this.joystickKnob = this.scene.add.circle(
+            x, y, knobRadius, 
+            JOYSTICK_CONFIG.COLORS.KNOB, 0.8
+        );
+        this.joystickKnob.setStrokeStyle(2, JOYSTICK_CONFIG.COLORS.KNOB_STROKE, 1);
+        this.joystickKnob.setScrollFactor(0);
+        this.joystickKnob.setDepth(JOYSTICK_CONFIG.DEPTH_KNOB);
+        this.joystickKnob.setScale(0);
+        
+        // 出现动画
+        this.appearTween = this.scene.tweens.add({
+            targets: [this.joystickBase, this.joystickKnob],
+            scale: 1,
+            alpha: { from: 0, to: 1 },
+            duration: JOYSTICK_CONFIG.ANIMATION.APPEAR_DURATION,
+            ease: 'Back.easeOut'
+        });
+    }
+    
+    endDynamicJoystickDrag() {
+        this.isDragging = false;
+        
+        // 清理动态摇杆
+        if (this.isDynamicJoystick) {
+            // 消失动画
+            this.scene.tweens.add({
+                targets: [this.joystickBase, this.joystickKnob],
+                scale: 0,
+                alpha: 0,
+                duration: JOYSTICK_CONFIG.ANIMATION.RETURN_DURATION,
+                ease: 'Back.easeIn',
+                onComplete: () => {
+                    if (this.joystickBase) this.joystickBase.destroy();
+                    if (this.joystickKnob) this.joystickKnob.destroy();
+                    this.joystickBase = null;
+                    this.joystickKnob = null;
+                    this.isDynamicJoystick = false;
+                }
+            });
+        }
+        
+        // 重置输入状态
+        this.resetTouchInput();
     }
 }

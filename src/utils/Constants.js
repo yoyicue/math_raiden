@@ -8,14 +8,21 @@ export const GAME_CONFIG = {
 // 玩家配置
 export const PLAYER_CONFIG = {
     SPEED: 300,
-    MAX_LIVES: 5,
-    MAX_SHIELD: 25,
-    MAX_MISSILES: 100,
+    MAX_LIVES: 3,
+    MAX_SHIELD: 100,
     MAX_WEAPON_LEVEL: 3,
+    MAX_MISSILES: 999,
     INVULNERABLE_TIME: {
-        SHIELD_HIT: 60,  // 1秒
-        LIFE_HIT: 120,   // 2秒
-        CORRECT_ANSWER: 180  // 3秒
+        SHIELD_HIT: 60,  // 1秒 (60帧)
+        LIFE_HIT: 120    // 2秒
+    },
+    // 移动控制优化参数
+    MOVEMENT: {
+        INPUT_SMOOTHING: 0.15,      // 输入平滑系数 (0-1, 越小越平滑)
+        ACCELERATION: 2000,         // 加速度
+        DRAG: 500,                  // 阻力
+        VELOCITY_THRESHOLD: 50,     // 速度阈值，用于判断是否接近目标速度
+        STOP_THRESHOLD: 10          // 停止阈值，速度低于此值时直接停止
     }
 };
 

@@ -21,6 +21,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         // 触摸控制支持
         this.touchControls = null;
         
+        // 输入平滑处理
+        this.targetVelocity = { x: 0, y: 0 };
+        this.currentVelocity = { x: 0, y: 0 };
+        this.inputSmoothing = PLAYER_CONFIG.MOVEMENT.INPUT_SMOOTHING;
+        this.acceleration = PLAYER_CONFIG.MOVEMENT.ACCELERATION;
+        this.maxSpeed = PLAYER_CONFIG.SPEED;
+        
         // 射击定时器
         this.lastShot = 0;
         this.lastMissile = 0;
@@ -32,7 +39,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this);
         this.setCollideWorldBounds(true);
         this.setSize(30, 30);
-        this.setDrag(300); // 添加阻力，使移动更平滑
+        this.setDrag(PLAYER_CONFIG.MOVEMENT.DRAG);
+        this.setMaxVelocity(this.maxSpeed, this.maxSpeed);
         
         // 设置自定义移动边界（考虑移动端UI）
         this.setupMovementBounds();
@@ -95,39 +103,86 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
     
     handleMovement() {
-        let velocityX = 0;
-        let velocityY = 0;
+        let inputX = 0;
+        let inputY = 0;
         
         // 触摸控制优先
         if (this.touchControls && this.touchControls.isActive) {
             const touchInput = this.touchControls.getInput();
             if (touchInput.isActive) {
-                velocityX = touchInput.x * this.speed;
-                velocityY = touchInput.y * this.speed;
+                inputX = touchInput.x;
+                inputY = touchInput.y;
             }
         } else {
             // 键盘控制作为备选
             if (this.cursors.left.isDown || this.wasdKeys.A.isDown) {
-                velocityX = -this.speed;
+                inputX = -1;
             }
             if (this.cursors.right.isDown || this.wasdKeys.D.isDown) {
-                velocityX = this.speed;
+                inputX = 1;
             }
             if (this.cursors.up.isDown || this.wasdKeys.W.isDown) {
-                velocityY = -this.speed;
+                inputY = -1;
             }
             if (this.cursors.down.isDown || this.wasdKeys.S.isDown) {
-                velocityY = this.speed;
+                inputY = 1;
             }
             
-            // 对角线移动速度修正（仅键盘控制需要）
-            if (velocityX !== 0 && velocityY !== 0) {
-                velocityX *= 0.707; // 1/√2
-                velocityY *= 0.707;
+            // 对角线移动归一化（仅键盘控制需要）
+            if (inputX !== 0 && inputY !== 0) {
+                const magnitude = Math.sqrt(inputX * inputX + inputY * inputY);
+                inputX /= magnitude;
+                inputY /= magnitude;
             }
         }
         
-        this.setVelocity(velocityX, velocityY);
+        // 计算目标速度
+        this.targetVelocity.x = inputX * this.maxSpeed;
+        this.targetVelocity.y = inputY * this.maxSpeed;
+        
+        // 输入平滑处理 - 使用插值让当前速度逐渐接近目标速度
+        this.currentVelocity.x = Phaser.Math.Linear(
+            this.currentVelocity.x,
+            this.targetVelocity.x,
+            this.inputSmoothing
+        );
+        this.currentVelocity.y = Phaser.Math.Linear(
+            this.currentVelocity.y,
+            this.targetVelocity.y,
+            this.inputSmoothing
+        );
+        
+        // 应用加速度而不是直接设置速度
+        if (Math.abs(this.currentVelocity.x) > 0.1 || Math.abs(this.currentVelocity.y) > 0.1) {
+            // 计算加速度方向
+            const accelX = Math.sign(this.currentVelocity.x) * this.acceleration;
+            const accelY = Math.sign(this.currentVelocity.y) * this.acceleration;
+            
+            // 应用加速度
+            this.setAcceleration(accelX, accelY);
+            
+            // 当接近目标速度时，直接设置速度以避免超调
+            const velocityDiffX = Math.abs(this.body.velocity.x - this.currentVelocity.x);
+            const velocityDiffY = Math.abs(this.body.velocity.y - this.currentVelocity.y);
+            
+            if (velocityDiffX < PLAYER_CONFIG.MOVEMENT.VELOCITY_THRESHOLD) {
+                this.setVelocityX(this.currentVelocity.x);
+            }
+            if (velocityDiffY < PLAYER_CONFIG.MOVEMENT.VELOCITY_THRESHOLD) {
+                this.setVelocityY(this.currentVelocity.y);
+            }
+        } else {
+            // 没有输入时，停止加速并让阻力自然减速
+            this.setAcceleration(0, 0);
+            
+            // 当速度很小时直接停止，避免滑行太久
+            if (Math.abs(this.body.velocity.x) < PLAYER_CONFIG.MOVEMENT.STOP_THRESHOLD && 
+                Math.abs(this.body.velocity.y) < PLAYER_CONFIG.MOVEMENT.STOP_THRESHOLD) {
+                this.setVelocity(0, 0);
+                this.currentVelocity.x = 0;
+                this.currentVelocity.y = 0;
+            }
+        }
         
         // 应用自定义边界限制
         this.applyMovementBounds();
