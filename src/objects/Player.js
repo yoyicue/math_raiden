@@ -105,6 +105,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     handleMovement() {
         let inputX = 0;
         let inputY = 0;
+        let isKeyboardInput = false;
         
         // 触摸控制优先
         if (this.touchControls && this.touchControls.isActive) {
@@ -112,6 +113,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
             if (touchInput.isActive) {
                 inputX = touchInput.x;
                 inputY = touchInput.y;
+                isKeyboardInput = false;
             }
         } else {
             // 键盘控制作为备选
@@ -134,8 +136,42 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
                 inputX /= magnitude;
                 inputY /= magnitude;
             }
+            
+            isKeyboardInput = (inputX !== 0 || inputY !== 0);
         }
         
+        // 根据输入类型使用不同的处理方式
+        if (isKeyboardInput) {
+            // 键盘输入：直接响应，无平滑处理
+            this.handleKeyboardMovement(inputX, inputY);
+        } else {
+            // 触摸输入：使用平滑处理
+            this.handleTouchMovement(inputX, inputY);
+        }
+        
+        // 应用自定义边界限制
+        this.applyMovementBounds();
+    }
+    
+    handleKeyboardMovement(inputX, inputY) {
+        // 键盘输入直接设置速度，提供即时响应
+        const targetVelocityX = inputX * this.maxSpeed;
+        const targetVelocityY = inputY * this.maxSpeed;
+        
+        // 直接设置速度，无平滑处理
+        this.setVelocity(targetVelocityX, targetVelocityY);
+        
+        // 更新内部速度状态以保持一致性
+        this.currentVelocity.x = targetVelocityX;
+        this.currentVelocity.y = targetVelocityY;
+        this.targetVelocity.x = targetVelocityX;
+        this.targetVelocity.y = targetVelocityY;
+        
+        // 清除加速度，因为我们直接设置速度
+        this.setAcceleration(0, 0);
+    }
+    
+    handleTouchMovement(inputX, inputY) {
         // 计算目标速度
         this.targetVelocity.x = inputX * this.maxSpeed;
         this.targetVelocity.y = inputY * this.maxSpeed;
@@ -183,9 +219,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
                 this.currentVelocity.y = 0;
             }
         }
-        
-        // 应用自定义边界限制
-        this.applyMovementBounds();
     }
     
     applyMovementBounds() {
