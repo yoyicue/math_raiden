@@ -267,11 +267,8 @@ export default class MathSystem {
     }
     
     showAnswerResult(isCorrect, powerType) {
-        const resultText = isCorrect ? '答对了！' : '答错了！';
-        const color = isCorrect ? '#00ff00' : '#ff6600';
-        
-        // 通过HUD显示结果
-        this.scene.hud.showMathResult(isCorrect, resultText);
+        // 不需要额外显示结果，showPowerupMessage已经包含了足够的信息
+        // 道具奖励消息中的 ✓ 或 ○ 标记已经表明了答题结果
     }
     
     // 获取答题统计
