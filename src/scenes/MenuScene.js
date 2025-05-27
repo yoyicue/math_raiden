@@ -93,7 +93,7 @@ export default class MenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
         
         // 版本信息
-        this.add.text(centerX, gameHeight - 50, 'Phaser版 v1.0', {
+        this.add.text(centerX, gameHeight - 50, '献给西憨 v1.0', {
             fontSize: '14px',
             color: '#666666',
             fontFamily: 'Arial'
