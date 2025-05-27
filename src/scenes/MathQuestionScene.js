@@ -11,6 +11,8 @@ export default class MathQuestionScene extends Phaser.Scene {
         this.gradeLevel = data.gradeLevel || 1;
         this.callback = data.callback;
         this.answered = false;
+        this.autoSubmitTimer = null; // 自动提交计时器
+        this.autoSubmitCountdown = null; // 自动提交倒计时显示
     }
 
     create() {
@@ -79,11 +81,16 @@ export default class MathQuestionScene extends Phaser.Scene {
         // 键盘事件
         this.input.keyboard.on('keydown-ENTER', () => this.submitAnswer());
         
-        // 自动聚焦输入框
+        // 自动聚焦输入框并添加输入监听
         this.time.delayedCall(100, () => {
             const input = document.getElementById('mathInput');
             if (input) {
                 input.focus();
+                
+                // 添加输入监听，实现自动提交
+                input.addEventListener('input', (e) => {
+                    this.handleInputChange(e);
+                });
             }
         });
         
@@ -129,6 +136,62 @@ export default class MathQuestionScene extends Phaser.Scene {
         return powerupConfig ? powerupConfig.name : '未知道具';
     }
     
+    handleInputChange(event) {
+        // 清除之前的自动提交计时器和倒计时显示
+        if (this.autoSubmitTimer) {
+            this.autoSubmitTimer.destroy();
+            this.autoSubmitTimer = null;
+        }
+        
+        if (this.autoSubmitCountdown) {
+            this.autoSubmitCountdown.destroy();
+            this.autoSubmitCountdown = null;
+        }
+        
+        const userAnswer = parseInt(event.target.value);
+        const expectedLength = this.question?.answer?.toString().length || 1;
+        
+        // 检查输入是否有效且长度足够
+        if (!isNaN(userAnswer) && event.target.value.length >= expectedLength) {
+            // 显示自动提交倒计时
+            this.showAutoSubmitCountdown();
+            
+            // 设置2秒后自动提交
+            this.autoSubmitTimer = this.time.delayedCall(2000, () => {
+                // 再次检查输入值是否未变化
+                const currentInput = document.getElementById('mathInput');
+                if (currentInput && currentInput.value === event.target.value && !this.answered) {
+                    this.submitAnswer();
+                }
+            });
+        }
+    }
+    
+    showAutoSubmitCountdown() {
+        // 创建倒计时文本
+        this.autoSubmitCountdown = this.add.text(300, 540, '2秒后自动提交', {
+            fontSize: '14px',
+            color: '#ffaa00',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5);
+        
+        // 倒计时动画
+        let countdown = 2;
+        const countdownTimer = this.time.addEvent({
+            delay: 1000,
+            callback: () => {
+                countdown--;
+                if (countdown > 0 && this.autoSubmitCountdown) {
+                    this.autoSubmitCountdown.setText(`${countdown}秒后自动提交`);
+                } else if (this.autoSubmitCountdown) {
+                    this.autoSubmitCountdown.destroy();
+                    this.autoSubmitCountdown = null;
+                }
+            },
+            repeat: 1
+        });
+    }
+    
     submitAnswer() {
         if (this.answered) return; // 防止重复提交
         this.answered = true;
@@ -136,6 +199,17 @@ export default class MathQuestionScene extends Phaser.Scene {
         // 停止计时器
         if (this.timerEvent) {
             this.timerEvent.destroy();
+        }
+        
+        // 清除自动提交计时器和倒计时显示
+        if (this.autoSubmitTimer) {
+            this.autoSubmitTimer.destroy();
+            this.autoSubmitTimer = null;
+        }
+        
+        if (this.autoSubmitCountdown) {
+            this.autoSubmitCountdown.destroy();
+            this.autoSubmitCountdown = null;
         }
         
         const input = document.getElementById('mathInput');
@@ -195,6 +269,17 @@ export default class MathQuestionScene extends Phaser.Scene {
         // 清理计时器
         if (this.timerEvent) {
             this.timerEvent.destroy();
+        }
+        
+        // 清理自动提交计时器和倒计时显示
+        if (this.autoSubmitTimer) {
+            this.autoSubmitTimer.destroy();
+            this.autoSubmitTimer = null;
+        }
+        
+        if (this.autoSubmitCountdown) {
+            this.autoSubmitCountdown.destroy();
+            this.autoSubmitCountdown = null;
         }
         
         super.destroy();
