@@ -35,7 +35,6 @@ export default class HUD {
         
         // 背景面板
         this.elements.gameInfoBg = this.scene.add.rectangle(x + 80, y + 60, 160, 120, 0x000000, 0.7);
-        this.elements.gameInfoBg.setStrokeStyle(2, 0x333333);
         
         // 生命值
         this.elements.livesLabel = this.scene.add.text(x, y, '生命值:', {
@@ -111,7 +110,6 @@ export default class HUD {
         
         // 背景面板
         this.elements.powerupInfoBg = this.scene.add.rectangle(x - 80, y + 40, 160, 80, 0x000000, 0.7);
-        this.elements.powerupInfoBg.setStrokeStyle(2, 0x333333);
         
         // 武器等级
         this.elements.weaponLabel = this.scene.add.text(x - 120, y, '武器等级:', {
