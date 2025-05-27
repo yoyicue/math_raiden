@@ -127,10 +127,10 @@ export default class GameScene extends Phaser.Scene {
         // 设置玩家的触摸控制
         this.player.setTouchControls(this.touchControls);
         
-        // 在移动设备上创建控制模式切换按钮
-        if (this.touchControls && this.touchControls.isMobile) {
-            this.createControlModeButton();
-        }
+        // 注释掉控制模式切换按钮的创建，因为动态摇杆体验已经很好
+        // if (this.touchControls && this.touchControls.isMobile) {
+        //     this.createControlModeButton();
+        // }
         
         // 同步游戏状态
         this.syncGameState();
@@ -258,11 +258,11 @@ export default class GameScene extends Phaser.Scene {
             this.togglePause();
         });
         
-        // T键切换触屏控制模式（临时测试用）
-        this.touchModeKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
-        this.touchModeKey.on('down', () => {
-            this.toggleTouchControlMode();
-        });
+        // 移除T键切换触屏控制模式的功能，因为已经默认使用动态摇杆
+        // this.touchModeKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+        // this.touchModeKey.on('down', () => {
+        //     this.toggleTouchControlMode();
+        // });
         
         // 数字键切换难度
         for (let i = 1; i <= 3; i++) {

@@ -26,9 +26,9 @@ const JOYSTICK_CONFIG = {
 
 // 触屏控制模式
 const CONTROL_MODES = {
-    JOYSTICK: 'joystick',    // 固定摇杆模式
-    DYNAMIC_JOYSTICK: 'dynamic_joystick', // 动态摇杆模式
-    TOUCH: 'touch'           // 单指触屏模式
+    JOYSTICK: 'joystick',    // 固定摇杆模式（保留用于特殊需求）
+    DYNAMIC_JOYSTICK: 'dynamic_joystick', // 动态摇杆模式（主要模式）
+    // TOUCH: 'touch'           // 单指触屏模式（暂时移除，专注摇杆体验）
 };
 
 export default class TouchControls {
@@ -94,12 +94,12 @@ export default class TouchControls {
             return;
         }
         
+        // 简化控制模式选择，主要使用动态摇杆
         if (this.controlMode === CONTROL_MODES.JOYSTICK) {
             this.createVirtualJoystick();
-        } else if (this.controlMode === CONTROL_MODES.DYNAMIC_JOYSTICK) {
+        } else {
+            // 默认使用动态摇杆模式，提供最佳体验
             this.createDynamicJoystickArea();
-        } else if (this.controlMode === CONTROL_MODES.TOUCH) {
-            this.createTouchArea();
         }
         
         this.setupTouchEvents();
@@ -197,12 +197,12 @@ export default class TouchControls {
     }
     
     setupTouchEvents() {
+        // 简化事件设置，主要使用动态摇杆
         if (this.controlMode === CONTROL_MODES.JOYSTICK) {
             this.setupJoystickEvents();
-        } else if (this.controlMode === CONTROL_MODES.DYNAMIC_JOYSTICK) {
+        } else {
+            // 默认使用动态摇杆事件
             this.setupDynamicJoystickEvents();
-        } else if (this.controlMode === CONTROL_MODES.TOUCH) {
-            this.setupTouchAreaEvents();
         }
     }
     
