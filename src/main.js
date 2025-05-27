@@ -30,6 +30,12 @@ const config = {
     scene: [BootScene, PreloadScene, MenuScene, GameScene, GameOverScene, MathQuestionScene]
 };
 
+// 移除加载文本
+const loadingElement = document.querySelector('.loading');
+if (loadingElement) {
+    loadingElement.remove();
+}
+
 // 创建游戏实例
 const game = new Phaser.Game(config);
 
