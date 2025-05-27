@@ -127,14 +127,26 @@ export default class Missile extends Phaser.Physics.Arcade.Sprite {
         // 对附近敌机造成范围伤害
         if (this.scene.enemies) {
             this.scene.enemies.children.entries.forEach(enemy => {
-                if (enemy.active) {
+                if (enemy.active && !enemy.hitByMissile) { // 跳过已被直接击中的敌机
                     const distance = Phaser.Math.Distance.Between(
                         this.x, this.y, enemy.x, enemy.y
                     );
                     
                     if (distance < 60) { // 爆炸范围
-                        enemy.takeDamage(this.damage);
+                        if (enemy.takeDamage(this.damage)) {
+                            // 范围伤害摧毁敌机，给予分数奖励
+                            if (this.scene.addScore) {
+                                this.scene.addScore(enemy.scoreValue);
+                            }
+                        }
                     }
+                }
+            });
+            
+            // 清理标记
+            this.scene.enemies.children.entries.forEach(enemy => {
+                if (enemy.active) {
+                    enemy.hitByMissile = false;
                 }
             });
         }

@@ -321,10 +321,10 @@ export default class GameScene extends Phaser.Scene {
         bullet.hit();
         
         if (enemy.takeDamage(bullet.damage)) {
-            // 敌机被摧毁
+            // 敌机被摧毁，分数奖励，击败计数由Enemy.destroyEnemy()处理
             console.log('Enemy destroyed, adding score:', enemy.scoreValue);
             this.addScore(enemy.scoreValue);
-            this.gameState.enemiesDefeated++;
+            // 移除重复计数：this.gameState.enemiesDefeated++; 
         }
     }
     
@@ -367,7 +367,19 @@ export default class GameScene extends Phaser.Scene {
     missileHitEnemy(missile, enemy) {
         if (!missile.active || !enemy.active) return;
         
-        // 导弹击中敌机，导弹会自动爆炸并造成范围伤害
+        // 导弹直接击中敌机，立即造成伤害
+        if (enemy.takeDamage(missile.damage)) {
+            // 敌机被摧毁，给予分数奖励（击败计数由Enemy.destroyEnemy()处理）
+            this.addScore(enemy.scoreValue + 5); // 导弹击中额外加5分
+        } else {
+            // 敌机未被摧毁，给予少量额外分数
+            this.addScore(5);
+        }
+        
+        // 标记这个敌机已被直接击中，避免爆炸时重复伤害
+        enemy.hitByMissile = true;
+        
+        // 导弹爆炸并造成范围伤害
         missile.hit();
     }
     
@@ -475,6 +487,8 @@ export default class GameScene extends Phaser.Scene {
             if (enemy.active) {
                 this.effectSystem.createExplosion(enemy.x, enemy.y);
                 this.addScore(enemy.scoreValue);
+                // 增加击败敌机计数
+                this.gameState.enemiesDefeated++;
                 enemy.destroy();
             }
         });
@@ -498,6 +512,9 @@ export default class GameScene extends Phaser.Scene {
                 
                 // 增加分数
                 this.addScore(enemy.scoreValue);
+                
+                // 增加击败敌机计数
+                this.gameState.enemiesDefeated++;
                 
                 // 销毁敌机
                 enemy.destroy();
