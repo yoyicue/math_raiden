@@ -257,12 +257,36 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     handleMissiles() {
         if (this.missiles <= 0) return;
         
+        // 检查屏幕上是否有敌机
+        if (!this.hasEnemiesOnScreen()) return;
+        
         const currentTime = this.scene.time.now;
         
         if (currentTime - this.lastMissile > this.missileInterval) {
             this.fireMissile();
             this.lastMissile = currentTime;
         }
+    }
+    
+    // 检查屏幕上是否有敌机
+    hasEnemiesOnScreen() {
+        if (!this.scene.enemies || !this.scene.enemies.children) return false;
+        
+        // 检查是否有活跃且在攻击范围内的敌机
+        const attackRange = WEAPON_CONFIG.MISSILE_TARGET_RANGE; // 使用导弹的目标搜索范围
+        
+        const enemiesInRange = this.scene.enemies.children.entries.filter(enemy => {
+            if (!enemy || !enemy.active || !enemy.visible) return false;
+            
+            // 计算与玩家的距离
+            const distance = Phaser.Math.Distance.Between(
+                this.x, this.y, enemy.x, enemy.y
+            );
+            
+            return distance <= attackRange;
+        });
+        
+        return enemiesInRange.length > 0;
     }
     
     shoot() {
