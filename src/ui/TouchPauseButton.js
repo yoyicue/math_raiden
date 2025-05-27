@@ -12,7 +12,7 @@ export default class TouchPauseButton {
     createPauseButton() {
         // 暂停按钮位置（右上角）
         const x = this.scene.game.config.width - 50;
-        const y = 50;
+        const y = 120;
         
         // 创建按钮背景
         this.button = this.scene.add.circle(x, y, 25, 0x333333, 0.8);
