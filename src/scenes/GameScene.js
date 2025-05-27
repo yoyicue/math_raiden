@@ -67,6 +67,21 @@ export default class GameScene extends Phaser.Scene {
         // 淡入效果
         this.cameras.main.fadeIn(300, 0, 0, 0);
         
+        // 监听场景暂停和恢复事件
+        this.events.on('pause', () => {
+            console.log('GameScene paused');
+            if (this.touchControls) {
+                this.touchControls.pause();
+            }
+        });
+        
+        this.events.on('resume', () => {
+            console.log('GameScene resumed');
+            if (this.touchControls) {
+                this.touchControls.resume();
+            }
+        });
+        
         console.log('游戏场景创建完成');
     }
     
@@ -538,12 +553,20 @@ export default class GameScene extends Phaser.Scene {
             if (this.hud) {
                 this.hud.showPauseIndicator();
             }
+            // 暂停触摸控制
+            if (this.touchControls) {
+                this.touchControls.pause();
+            }
         } else {
             this.physics.resume();
             this.enemySpawnTimer.paused = false;
             if (this.hud) {
                 this.hud.hidePauseIndicator();
                 this.hud.showMessage('游戏继续', '#00ff00');
+            }
+            // 恢复触摸控制
+            if (this.touchControls) {
+                this.touchControls.resume();
             }
         }
         

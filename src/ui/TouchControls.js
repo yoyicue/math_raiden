@@ -34,6 +34,7 @@ export default class TouchControls {
     constructor(scene, controlMode = CONTROL_MODES.DYNAMIC_JOYSTICK) {
         this.scene = scene;
         this.isActive = false;
+        this.isPaused = false; // 添加暂停状态
         this.isMobile = this.detectMobile();
         this.controlMode = controlMode; // 控制模式
         
@@ -206,18 +207,29 @@ export default class TouchControls {
     setupJoystickEvents() {
         // 创建摇杆事件处理函数
         this.eventListeners.pointerdown = (pointer) => {
+            // 检查是否暂停或场景不活跃
+            if (this.isPaused || !this.scene.scene.isActive()) {
+                return;
+            }
+            
             if (this.isPointInJoystick(pointer.x, pointer.y)) {
                 this.startJoystickDrag(pointer);
             }
         };
         
         this.eventListeners.pointermove = (pointer) => {
+            // 检查是否暂停或场景不活跃
+            if (this.isPaused || !this.scene.scene.isActive()) {
+                return;
+            }
+            
             if (this.isDragging) {
                 this.updateJoystick(pointer);
             }
         };
         
         this.eventListeners.pointerup = () => {
+            // pointerup 事件即使在暂停时也要处理，以清理状态
             if (this.isDragging) {
                 this.endJoystickDrag();
             }
@@ -232,6 +244,11 @@ export default class TouchControls {
     setupDynamicJoystickEvents() {
         // 动态摇杆事件处理
         this.eventListeners.pointerdown = (pointer) => {
+            // 检查是否暂停或场景不活跃
+            if (this.isPaused || !this.scene.scene.isActive()) {
+                return;
+            }
+            
             // 检查是否在左半屏
             if (pointer.x <= this.scene.game.config.width / 2) {
                 this.createDynamicJoystick(pointer.x, pointer.y);
@@ -243,12 +260,18 @@ export default class TouchControls {
         };
         
         this.eventListeners.pointermove = (pointer) => {
+            // 检查是否暂停或场景不活跃
+            if (this.isPaused || !this.scene.scene.isActive()) {
+                return;
+            }
+            
             if (this.isDragging && this.isDynamicJoystick) {
                 this.updateJoystick(pointer);
             }
         };
         
         this.eventListeners.pointerup = () => {
+            // pointerup 事件即使在暂停时也要处理，以清理状态
             if (this.isDragging && this.isDynamicJoystick) {
                 this.endDynamicJoystickDrag();
             }
@@ -263,16 +286,27 @@ export default class TouchControls {
     setupTouchAreaEvents() {
         // 创建触屏事件处理函数
         this.eventListeners.pointerdown = (pointer) => {
+            // 检查是否暂停或场景不活跃
+            if (this.isPaused || !this.scene.scene.isActive()) {
+                return;
+            }
+            
             this.startTouch(pointer);
         };
         
         this.eventListeners.pointermove = (pointer) => {
+            // 检查是否暂停或场景不活跃
+            if (this.isPaused || !this.scene.scene.isActive()) {
+                return;
+            }
+            
             if (this.isTouch) {
                 this.updateTouch(pointer);
             }
         };
         
         this.eventListeners.pointerup = () => {
+            // pointerup 事件即使在暂停时也要处理，以清理状态
             if (this.isTouch) {
                 this.endTouch();
             }
@@ -449,6 +483,14 @@ export default class TouchControls {
     
     // 获取当前输入状态
     getInput() {
+        if (this.isPaused || !this.scene.scene.isActive()) {
+            return {
+                x: 0,
+                y: 0,
+                isActive: false
+            };
+        }
+        
         return {
             x: this.touchInput.x,
             y: this.touchInput.y,
@@ -662,5 +704,28 @@ export default class TouchControls {
         
         // 重置输入状态
         this.resetTouchInput();
+    }
+
+    // 暂停控制器
+    pause() {
+        this.isPaused = true;
+        
+        // 如果有正在进行的动态摇杆操作，立即结束
+        if (this.isDragging && this.isDynamicJoystick) {
+            this.endDynamicJoystickDrag();
+        }
+        
+        // 重置所有输入状态
+        this.resetTouchInput();
+        this.isDragging = false;
+        this.isTouch = false;
+        
+        console.log('TouchControls paused');
+    }
+    
+    // 恢复控制器
+    resume() {
+        this.isPaused = false;
+        console.log('TouchControls resumed');
     }
 }
