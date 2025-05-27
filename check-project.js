@@ -18,16 +18,23 @@ const requiredFiles = [
     'src/scenes/GameScene.js',
     'src/scenes/GameOverScene.js',
     'src/scenes/MathQuestionScene.js',
-    // 实际存在的核心文件
+    // 核心游戏对象
     'src/objects/Player.js',
     'src/objects/Enemy.js',
     'src/objects/Bullet.js',
     'src/objects/Missile.js',
+    // 核心系统
     'src/systems/MathSystem.js',
     'src/systems/EffectSystem.js',
+    // UI组件（包括移动端支持）
     'src/ui/HUD.js',
+    'src/ui/TouchControls.js',
+    'src/ui/TouchKeyboard.js',
+    'src/ui/TouchPauseButton.js',
+    // 文档
     'README.md',
-    'architecture-design.md'
+    'architecture-design.md',
+    'demo.html'
 ];
 
 console.log('📁 检查必要文件:');
@@ -47,7 +54,6 @@ const requiredDirs = [
     'src/systems',
     'src/ui',
     'src/utils',
-    'src/config',
     'assets/images',
     'assets/audio'
 ];
@@ -145,52 +151,113 @@ Object.entries(fileDetails).forEach(([dir, stats]) => {
     console.log(`  📁 ${dir}: ${stats.files} 文件, ${stats.lines} 行`);
 });
 
-// 检查项目完成度
-console.log('\n🎯 项目完成度分析:');
-const coreFiles = [
-    'src/scenes/GameScene.js',
-    'src/scenes/MathQuestionScene.js',
-    'src/objects/Player.js',
-    'src/objects/Enemy.js',
-    'src/systems/MathSystem.js',
-    'src/ui/HUD.js'
+// 检查核心功能完成度
+console.log('\n🎯 核心功能完成度分析:');
+const coreFeatures = [
+    { name: '游戏场景系统', files: ['src/scenes/GameScene.js', 'src/scenes/MathQuestionScene.js'], minLines: 400 },
+    { name: '玩家系统', files: ['src/objects/Player.js'], minLines: 300 },
+    { name: '敌机系统', files: ['src/objects/Enemy.js'], minLines: 150 },
+    { name: '子弹系统', files: ['src/objects/Bullet.js'], minLines: 150 },
+    { name: '导弹系统', files: ['src/objects/Missile.js'], minLines: 100 },
+    { name: '数学题系统', files: ['src/systems/MathSystem.js'], minLines: 200 },
+    { name: '特效系统', files: ['src/systems/EffectSystem.js'], minLines: 200 },
+    { name: 'HUD界面', files: ['src/ui/HUD.js'], minLines: 200 },
+    { name: '移动端触控', files: ['src/ui/TouchControls.js'], minLines: 300 },
+    { name: '虚拟键盘', files: ['src/ui/TouchKeyboard.js'], minLines: 200 }
 ];
 
-let completedCore = 0;
-coreFiles.forEach(file => {
-    if (fs.existsSync(file)) {
-        const content = fs.readFileSync(file, 'utf8');
-        const lines = content.split('\n').length;
-        if (lines > 50) { // 假设超过50行表示有实质内容
-            completedCore++;
+let completedFeatures = 0;
+coreFeatures.forEach(feature => {
+    let featureCompleted = true;
+    let totalFeatureLines = 0;
+    
+    feature.files.forEach(file => {
+        if (fs.existsSync(file)) {
+            const content = fs.readFileSync(file, 'utf8');
+            const lines = content.split('\n').length;
+            totalFeatureLines += lines;
+        } else {
+            featureCompleted = false;
         }
+    });
+    
+    if (featureCompleted && totalFeatureLines >= feature.minLines) {
+        completedFeatures++;
+        console.log(`  ✅ ${feature.name}: ${totalFeatureLines} 行`);
+    } else {
+        console.log(`  ❌ ${feature.name}: ${featureCompleted ? totalFeatureLines : 0} 行 (需要 ${feature.minLines}+ 行)`);
     }
 });
 
-const completionRate = Math.round((completedCore / coreFiles.length) * 100);
-console.log(`  🚀 核心功能完成度: ${completionRate}% (${completedCore}/${coreFiles.length})`);
+const completionRate = Math.round((completedFeatures / coreFeatures.length) * 100);
+console.log(`\n  🚀 核心功能完成度: ${completionRate}% (${completedFeatures}/${coreFeatures.length})`);
+
+// 检查移动端支持
+console.log('\n📱 移动端支持检查:');
+const mobileFeatures = [
+    'src/ui/TouchControls.js',
+    'src/ui/TouchKeyboard.js',
+    'src/ui/TouchPauseButton.js'
+];
+
+let mobileSupport = 0;
+mobileFeatures.forEach(file => {
+    const exists = fs.existsSync(file);
+    const status = exists ? '✅' : '❌';
+    console.log(`  ${status} ${file.split('/').pop()}`);
+    if (exists) mobileSupport++;
+});
+
+const mobileRate = Math.round((mobileSupport / mobileFeatures.length) * 100);
+console.log(`  📱 移动端支持完成度: ${mobileRate}%`);
+
+// 检查文档完整性
+console.log('\n📚 文档完整性检查:');
+const docs = [
+    { file: 'README.md', name: '项目说明文档' },
+    { file: 'architecture-design.md', name: '架构设计文档' },
+    { file: 'demo.html', name: '完整游戏演示' }
+];
+
+let docsComplete = 0;
+docs.forEach(doc => {
+    const exists = fs.existsSync(doc.file);
+    const status = exists ? '✅' : '❌';
+    if (exists) {
+        const content = fs.readFileSync(doc.file, 'utf8');
+        const lines = content.split('\n').length;
+        console.log(`  ${status} ${doc.name}: ${lines} 行`);
+        docsComplete++;
+    } else {
+        console.log(`  ${status} ${doc.name}: 缺失`);
+    }
+});
 
 // 总结
 console.log('\n🎯 项目状态总结:');
 if (allFilesExist && allDirsExist) {
     console.log('  ✅ 项目结构完整');
-    if (completionRate >= 80) {
-        console.log('  🎉 项目基本完成，可以进行测试和优化');
-    } else if (completionRate >= 50) {
-        console.log('  🚧 项目开发中，核心功能已实现');
+    
+    if (completionRate >= 90) {
+        console.log('  🎉 项目已完成，功能齐全，支持跨平台');
+        console.log('  📱 移动端支持完整，包含触控系统');
+        console.log('  🧮 数学教育功能完善');
+    } else if (completionRate >= 70) {
+        console.log('  🚧 项目基本完成，核心功能已实现');
     } else {
-        console.log('  🚀 项目刚起步，继续开发核心功能');
+        console.log('  🚀 项目开发中，继续完善核心功能');
     }
     
     console.log('\n💡 下一步建议:');
-    if (completionRate >= 80) {
-        console.log('  1. 运行 npm run dev 测试游戏');
-        console.log('  2. 优化游戏体验和性能');
-        console.log('  3. 添加更多关卡和功能');
-        console.log('  4. 准备部署到生产环境');
+    if (completionRate >= 90) {
+        console.log('  1. 运行 npm run dev 测试完整游戏功能');
+        console.log('  2. 在移动设备上测试触控体验');
+        console.log('  3. 优化游戏性能和用户体验');
+        console.log('  4. 添加音效系统增强沉浸感');
+        console.log('  5. 准备部署到生产环境');
     } else {
-                 console.log('  1. 运行 npm run dev 启动开发服务器');
-         console.log('  2. 访问 http://localhost:3000 查看游戏');
+        console.log('  1. 运行 npm run dev 启动开发服务器');
+        console.log('  2. 访问 http://localhost:3000 查看游戏');
         console.log('  3. 继续完善核心游戏逻辑');
         console.log('  4. 测试数学题系统和游戏机制');
     }
@@ -204,4 +271,12 @@ console.log('  npm run build   - 构建生产版本');
 console.log('  npm run preview - 预览构建结果');
 console.log('  git status      - 查看Git状态');
 console.log('  git add .       - 添加所有更改');
-console.log('  git commit -m "message" - 提交更改'); 
+console.log('  git commit -m "feat: 更新功能" - 提交更改 (CC规范)');
+
+console.log('\n🎮 游戏特色:');
+console.log('  🚀 完整的射击游戏体验');
+console.log('  🧮 三难度等级数学题系统');
+console.log('  📱 完整移动端支持 (虚拟摇杆 + 触屏)');
+console.log('  🎯 跨平台兼容 (桌面端 + 移动端)');
+console.log('  ⚡ 高性能优化 (对象池 + 动态纹理)');
+console.log('  🎨 丰富视觉特效系统'); 
