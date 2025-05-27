@@ -62,7 +62,7 @@ export default class TouchKeyboard {
     createNumberButtons() {
         const buttonSize = this.embedded ? 50 : 60; // 嵌入模式时稍小
         const spacing = this.embedded ? 55 : 70; // 嵌入模式时间距更小
-        const startX = this.embedded ? -spacing * 1.6 : -spacing * 1.5; // 嵌入模式时确保在框内
+        const startX = this.embedded ? -spacing * 1.6 - 20 : -spacing * 1.5; // 嵌入模式时向左移动20像素
         const startY = this.embedded ? -80 : -60; // 嵌入模式时调整位置
         
         // 数字 1-9 (3x3网格，但向右偏移一列)
@@ -87,7 +87,7 @@ export default class TouchKeyboard {
     createFunctionButtons() {
         const buttonSize = this.embedded ? 50 : 60; // 嵌入模式时稍小
         const spacing = this.embedded ? 55 : 70; // 嵌入模式时间距更小
-        const startX = this.embedded ? -spacing * 1.6 : -spacing * 1.5; // 嵌入模式时确保在框内
+        const startX = this.embedded ? -spacing * 1.6 - 20 : -spacing * 1.5; // 嵌入模式时向左移动20像素
         const startY = this.embedded ? -80 : -60; // 嵌入模式时调整位置
         
         // 退格按钮 (←) - 右上角
