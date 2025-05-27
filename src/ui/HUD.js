@@ -7,7 +7,15 @@ export default class HUD {
         this.messageQueue = [];
         this.currentMessage = null;
         
+        // 检测是否为移动设备
+        this.isMobile = this.detectMobile();
+        
         this.createHUD();
+    }
+    
+    detectMobile() {
+        return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
     }
     
     createHUD() {
@@ -26,40 +34,34 @@ export default class HUD {
     
     createGameInfoPanel() {
         // 使用相对边距，确保在小屏幕上不会超出
-        const gameWidth = this.scene.game.config.width;
-        const gameHeight = this.scene.game.config.height;
-        const margin = Math.max(10, Math.min(20, gameWidth * 0.03)); // 动态边距，最小10px，最大20px
-        
+        const margin = Math.max(10, Math.min(20, this.scene.game.config.width * 0.03));
         const x = margin;
         const y = margin;
         
-        // 背景面板
-        this.elements.gameInfoBg = this.scene.add.rectangle(x + 80, y + 60, 160, 120, 0x000000, 0.7);
-        
-        // 生命值
-        this.elements.livesLabel = this.scene.add.text(x, y, '生命值:', {
+        // 分数
+        this.elements.scoreLabel = this.scene.add.text(x, y, '分数:', {
             fontSize: UI_CONFIG.FONTS.SIZE.NORMAL,
             color: UI_CONFIG.COLORS.TEXT,
             fontFamily: UI_CONFIG.FONTS.PRIMARY
         });
         
-        this.elements.livesValue = this.scene.add.text(x + 70, y, '3', {
+        this.elements.scoreValue = this.scene.add.text(x + 70, y, '0', {
             fontSize: UI_CONFIG.FONTS.SIZE.NORMAL,
             color: UI_CONFIG.COLORS.PRIMARY,
             fontFamily: UI_CONFIG.FONTS.PRIMARY,
             fontStyle: 'bold'
         });
         
-        // 分数
-        this.elements.scoreLabel = this.scene.add.text(x, y + 25, '分数:', {
+        // 生命值
+        this.elements.livesLabel = this.scene.add.text(x, y + 25, '生命:', {
             fontSize: UI_CONFIG.FONTS.SIZE.NORMAL,
             color: UI_CONFIG.COLORS.TEXT,
             fontFamily: UI_CONFIG.FONTS.PRIMARY
         });
         
-        this.elements.scoreValue = this.scene.add.text(x + 70, y + 25, '0', {
+        this.elements.livesValue = this.scene.add.text(x + 70, y + 25, '3', {
             fontSize: UI_CONFIG.FONTS.SIZE.NORMAL,
-            color: UI_CONFIG.COLORS.PRIMARY,
+            color: UI_CONFIG.COLORS.WARNING,
             fontFamily: UI_CONFIG.FONTS.PRIMARY,
             fontStyle: 'bold'
         });
@@ -92,8 +94,15 @@ export default class HUD {
             fontStyle: 'bold'
         });
         
-        // 操作提示
-        this.elements.pauseHint = this.scene.add.text(x, y + 105, '按 P 暂停', {
+        // 操作提示 - 根据设备类型显示不同提示
+        let pauseHintText;
+        if (this.isMobile) {
+            pauseHintText = '点 ⏸️ 暂停';
+        } else {
+            pauseHintText = '按 P 暂停';
+        }
+        
+        this.elements.pauseHint = this.scene.add.text(x, y + 105, pauseHintText, {
             fontSize: UI_CONFIG.FONTS.SIZE.SMALL,
             color: UI_CONFIG.COLORS.DISABLED,
             fontFamily: UI_CONFIG.FONTS.PRIMARY
@@ -171,7 +180,15 @@ export default class HUD {
             fontStyle: 'bold'
         }).setOrigin(0.5);
         
-        const pauseHint = this.scene.add.text(0, 20, '按 P 键继续游戏', {
+        // 根据设备类型显示不同的继续游戏提示
+        let continueHintText;
+        if (this.isMobile) {
+            continueHintText = '点 ▶️ 继续游戏';
+        } else {
+            continueHintText = '按 P 键继续游戏';
+        }
+        
+        const pauseHint = this.scene.add.text(0, 20, continueHintText, {
             fontSize: UI_CONFIG.FONTS.SIZE.LARGE,
             color: UI_CONFIG.COLORS.TEXT,
             fontFamily: UI_CONFIG.FONTS.PRIMARY
