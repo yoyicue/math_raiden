@@ -32,15 +32,13 @@ function getGameDimensions() {
         
         // 检测是否有安全区域支持
         const safeAreaInsetTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0');
-        const safeAreaInsetBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab') || '0');
         
-        // 为移动端浏览器UI预留空间
+        // 只为顶部状态栏预留空间，底部由CSS的padding-bottom处理
         const reservedTop = Math.max(safeAreaInsetTop, 20); // 状态栏预留，最少20px
-        const reservedBottom = Math.max(safeAreaInsetBottom, 30); // 底部预留，最少30px
         
-        // 计算可用尺寸
+        // 计算可用尺寸 - 移除底部预留，因为CSS已经通过padding-bottom处理
         const availableWidth = viewportWidth;
-        const availableHeight = viewportHeight - reservedTop - reservedBottom;
+        const availableHeight = viewportHeight - reservedTop;
         
         // 确保最小尺寸
         const minWidth = 320;
@@ -52,7 +50,7 @@ function getGameDimensions() {
         console.log('移动端尺寸计算:', {
             viewport: { width: viewportWidth, height: viewportHeight },
             container: { width: containerWidth, height: containerHeight },
-            safeArea: { top: reservedTop, bottom: reservedBottom },
+            safeArea: { top: reservedTop },
             available: { width: availableWidth, height: availableHeight },
             final: { width, height }
         });
