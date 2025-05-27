@@ -3,6 +3,7 @@ import Enemy from '../objects/Enemy.js';
 import { BulletManager } from '../objects/Bullet.js';
 import Missile from '../objects/Missile.js';
 import EffectSystem from '../systems/EffectSystem.js';
+import HUD from '../ui/HUD.js';
 import { GAME_CONFIG, POWERUP_CONFIG } from '../utils/Constants.js';
 
 export default class GameScene extends Phaser.Scene {
@@ -69,6 +70,9 @@ export default class GameScene extends Phaser.Scene {
         // 初始化特效系统
         this.effectSystem = new EffectSystem(this);
         
+        // 初始化HUD系统
+        this.hud = new HUD(this);
+        
         // 创建敌机组
         this.enemies = this.add.group();
         
@@ -85,6 +89,9 @@ export default class GameScene extends Phaser.Scene {
         
         // 同步游戏状态
         this.syncGameState();
+        
+        // 更新HUD显示
+        this.updateHUD();
     }
     
     setupCollisions() {
@@ -351,25 +358,23 @@ export default class GameScene extends Phaser.Scene {
             this.gameState.weaponLevel = playerStatus.weaponLevel;
             this.gameState.missiles = playerStatus.missiles;
         }
+        
+        // 添加难度等级到游戏状态
+        this.gameState.gradeLevel = this.gradeLevel;
+    }
+    
+    updateHUD() {
+        // 更新HUD显示
+        if (this.hud) {
+            this.hud.updateGameState(this.gameState);
+        }
     }
     
     showMessage(text, color = '#ffffff') {
-        const message = this.add.text(GAME_CONFIG.WIDTH / 2, 100, text, {
-            fontSize: '20px',
-            color: color,
-            fontFamily: 'Arial',
-            stroke: '#000000',
-            strokeThickness: 2
-        }).setOrigin(0.5);
-        
-        this.tweens.add({
-            targets: message,
-            y: 50,
-            alpha: 0,
-            duration: 2000,
-            ease: 'Power2',
-            onComplete: () => message.destroy()
-        });
+        // 使用HUD系统显示消息
+        if (this.hud) {
+            this.hud.showMessage(text, color);
+        }
     }
     
     togglePause() {
@@ -378,11 +383,16 @@ export default class GameScene extends Phaser.Scene {
         if (this.gameState.paused) {
             this.physics.pause();
             this.enemySpawnTimer.paused = true;
-            this.showMessage('游戏暂停 - 按P继续', '#ffff00');
+            if (this.hud) {
+                this.hud.showPauseIndicator();
+            }
         } else {
             this.physics.resume();
             this.enemySpawnTimer.paused = false;
-            this.showMessage('游戏继续', '#00ff00');
+            if (this.hud) {
+                this.hud.hidePauseIndicator();
+                this.hud.showMessage('游戏继续', '#00ff00');
+            }
         }
     }
     
@@ -449,6 +459,9 @@ export default class GameScene extends Phaser.Scene {
         
         // 更新特效系统
         this.effectSystem.update();
+        
+        // 更新HUD
+        this.updateHUD();
         
         // 清理离开屏幕的道具
         this.powerups.children.entries.forEach(powerup => {
