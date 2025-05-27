@@ -212,58 +212,14 @@ export default class MathSystem {
     
     applyIncorrectReward(powerType) {
         const player = this.scene.player;
-        let rewardMessage = '';
         
-        // 给予基础保护
-        player.invulnerable = MATH_CONFIG.REWARDS.INCORRECT.invulnerableTime;
+        // 只给予1秒保护时间（与demo.html保持一致）
+        player.invulnerable = 60; // 1秒保护时间（60帧 = 1秒）
         
-        // 根据道具类型给予安慰奖励
-        switch(powerType) {
-            case 'WEAPON':
-                this.scene.addScore(50);
-                rewardMessage = '修复未完成，获得50分安慰奖励';
-                break;
-                
-            case 'SHIELD':
-                const shieldAmount = 5;
-                player.shield = Math.min(player.shield + shieldAmount, 25);
-                rewardMessage = `修复未完成，获得护盾+${shieldAmount}`;
-                break;
-                
-            case 'LIFE':
-                const shieldAmount2 = 3;
-                player.shield = Math.min(player.shield + shieldAmount2, 25);
-                rewardMessage = `修复未完成，获得护盾+${shieldAmount2}`;
-                break;
-                
-            case 'BOMB':
-                // 清除部分敌机
-                this.scene.clearSomeEnemies(0.3); // 清除30%的敌机
-                rewardMessage = '部分清屏！清除了一些敌机';
-                break;
-                
-            case 'MISSILE':
-                const missileAmount = 20;
-                player.missiles = Math.min(player.missiles + missileAmount, 100);
-                rewardMessage = `获得少量导弹+${missileAmount}`;
-                break;
-                
-            case 'SCORE':
-                this.scene.addScore(100);
-                rewardMessage = '获得100分安慰奖励';
-                break;
-                
-            default:
-                rewardMessage = '获得1秒保护时间';
-                break;
-        }
+        // 显示统一的安慰消息
+        this.scene.showMessage('修复未完成，但获得1秒保护时间', '#ff6600');
         
-        // 显示奖励消息
-        if (powerType) {
-            this.scene.hud.showPowerupMessage(powerType, false);
-        }
-        
-        return rewardMessage;
+        return '修复未完成，但获得1秒保护时间';
     }
     
     showAnswerResult(isCorrect, powerType) {
