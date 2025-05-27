@@ -1,11 +1,12 @@
 export default class TouchKeyboard {
-    constructor(scene, x, y, callback) {
+    constructor(scene, x, y, callback, embedded = false) {
         this.scene = scene;
         this.x = x;
         this.y = y;
         this.callback = callback;
         this.currentValue = '';
         this.maxDigits = 4;
+        this.embedded = embedded; // 嵌入模式标志
         
         // UI元素
         this.container = null;
@@ -20,54 +21,56 @@ export default class TouchKeyboard {
         this.container = this.scene.add.container(this.x, this.y);
         this.container.setDepth(2000);
         
-        // 创建背景
-        const background = this.scene.add.rectangle(0, 0, 280, 320, 0x000000, 0.8);
-        background.setStrokeStyle(2, 0x00ff00, 1);
-        this.container.add(background);
-        
-        // 创建显示屏
-        this.display = this.scene.add.rectangle(0, -120, 240, 40, 0x333333, 1);
-        this.display.setStrokeStyle(2, 0x666666, 1);
-        this.container.add(this.display);
-        
-        // 创建显示文本
-        this.displayText = this.scene.add.text(0, -120, '0', {
-            fontSize: '24px',
-            fontFamily: 'Arial',
-            color: '#00ff00',
-            fontStyle: 'bold'
-        });
-        this.displayText.setOrigin(0.5);
-        this.container.add(this.displayText);
+        if (!this.embedded) {
+            // 非嵌入模式：显示背景框
+            const background = this.scene.add.rectangle(0, 0, 280, 320, 0x000000, 0.8);
+            background.setStrokeStyle(2, 0x4488ff, 1);
+            this.container.add(background);
+            
+            // 创建显示屏
+            this.display = this.scene.add.rectangle(0, -120, 240, 40, 0x333333, 1);
+            this.display.setStrokeStyle(2, 0x666666, 1);
+            this.container.add(this.display);
+            
+            // 创建显示文本
+            this.displayText = this.scene.add.text(0, -120, '0', {
+                fontSize: '24px',
+                fontFamily: 'Arial',
+                color: '#00ff00',
+                fontStyle: 'bold'
+            });
+            this.displayText.setOrigin(0.5);
+            this.container.add(this.displayText);
+            
+            // 添加标题
+            const title = this.scene.add.text(0, -150, '请输入答案', {
+                fontSize: '18px',
+                fontFamily: 'Arial',
+                color: '#ffffff'
+            });
+            title.setOrigin(0.5);
+            this.container.add(title);
+        }
         
         // 创建数字按钮 (3x3 网格 + 0)
         this.createNumberButtons();
         
         // 创建功能按钮
         this.createFunctionButtons();
-        
-        // 添加标题
-        const title = this.scene.add.text(0, -150, '请输入答案', {
-            fontSize: '18px',
-            fontFamily: 'Arial',
-            color: '#ffffff'
-        });
-        title.setOrigin(0.5);
-        this.container.add(title);
     }
     
     createNumberButtons() {
-        const buttonSize = 60;
-        const spacing = 70;
-        const startX = -spacing;
-        const startY = -60;
+        const buttonSize = this.embedded ? 50 : 60; // 嵌入模式时稍小
+        const spacing = this.embedded ? 55 : 70; // 嵌入模式时间距更小
+        const startX = this.embedded ? -spacing * 1.6 : -spacing * 1.5; // 嵌入模式时确保在框内
+        const startY = this.embedded ? -80 : -60; // 嵌入模式时调整位置
         
-        // 数字 1-9
+        // 数字 1-9 (3x3网格，但向右偏移一列)
         for (let i = 1; i <= 9; i++) {
             const row = Math.floor((i - 1) / 3);
             const col = (i - 1) % 3;
             
-            const x = startX + col * spacing;
+            const x = startX + (col + 1) * spacing; // +1 让1-9向右偏移一列
             const y = startY + row * spacing;
             
             this.createButton(x, y, buttonSize, i.toString(), () => {
@@ -75,30 +78,32 @@ export default class TouchKeyboard {
             });
         }
         
-        // 数字 0
-        this.createButton(0, startY + 3 * spacing, buttonSize, '0', () => {
+        // 数字 0 - 在7的左侧（第三行第0列）
+        this.createButton(startX, startY + 2 * spacing, buttonSize, '0', () => {
             this.addDigit('0');
         });
     }
     
     createFunctionButtons() {
-        const buttonSize = 60;
-        const spacing = 70;
+        const buttonSize = this.embedded ? 50 : 60; // 嵌入模式时稍小
+        const spacing = this.embedded ? 55 : 70; // 嵌入模式时间距更小
+        const startX = this.embedded ? -spacing * 1.6 : -spacing * 1.5; // 嵌入模式时确保在框内
+        const startY = this.embedded ? -80 : -60; // 嵌入模式时调整位置
         
-        // 清除按钮
-        this.createButton(-spacing, -60 + 3 * spacing, buttonSize, 'C', () => {
-            this.clear();
-        }, 0xff4444);
-        
-        // 删除按钮
-        this.createButton(spacing, -60 + 3 * spacing, buttonSize, '←', () => {
+        // 退格按钮 (←) - 右上角
+        this.createButton(startX + 4 * spacing, startY, buttonSize, '←', () => {
             this.backspace();
-        }, 0xff8800);
+        }, 0x4488ff);
         
-        // 确认按钮
-        this.createButton(0, -60 + 4 * spacing, buttonSize * 1.5, '确认', () => {
+        // 删除按钮 (清除) - 右中
+        this.createButton(startX + 4 * spacing, startY + spacing, buttonSize, '删除', () => {
+            this.clear();
+        }, 0xff6666);
+        
+        // 确认按钮 - 右下
+        this.createButton(startX + 4 * spacing, startY + 2 * spacing, buttonSize, '确认', () => {
             this.submit();
-        }, 0x00ff00);
+        }, 0x00aa00);
     }
     
     createButton(x, y, size, text, callback, color = 0x666666) {
@@ -171,6 +176,11 @@ export default class TouchKeyboard {
         
         this.updateDisplay();
         this.playSound('beep');
+        
+        // 通知父组件输入变化，不再自动提交
+        if (this.callback) {
+            this.callback(parseInt(this.currentValue) || 0);
+        }
     }
     
     backspace() {
@@ -182,12 +192,22 @@ export default class TouchKeyboard {
         
         this.updateDisplay();
         this.playSound('beep');
+        
+        // 通知父组件输入变化
+        if (this.callback) {
+            this.callback(parseInt(this.currentValue) || 0);
+        }
     }
     
     clear() {
         this.currentValue = '0';
         this.updateDisplay();
         this.playSound('beep');
+        
+        // 通知父组件输入变化
+        if (this.callback) {
+            this.callback(0);
+        }
     }
     
     submit() {
@@ -196,21 +216,25 @@ export default class TouchKeyboard {
         
         this.playSound('confirm');
         
+        // 手动确认时，通过特殊标记告知父组件立即提交
         if (this.callback) {
-            this.callback(value);
+            this.callback(value, true); // 第二个参数表示立即提交
         }
     }
     
     updateDisplay() {
-        this.displayText.setText(this.currentValue);
-        
-        // 添加闪烁效果
-        this.scene.tweens.add({
-            targets: this.displayText,
-            alpha: 0.5,
-            duration: 100,
-            yoyo: true
-        });
+        // 只在非嵌入模式下更新内部显示
+        if (!this.embedded && this.displayText) {
+            this.displayText.setText(this.currentValue);
+            
+            // 添加闪烁效果
+            this.scene.tweens.add({
+                targets: this.displayText,
+                alpha: 0.5,
+                duration: 100,
+                yoyo: true
+            });
+        }
     }
     
     playSound(type) {
@@ -279,7 +303,7 @@ export default class TouchKeyboard {
         });
     }
     
-    // 销毁键盘
+    // 销毁键盘时清理定时器
     destroy() {
         if (this.container) {
             this.container.destroy();
