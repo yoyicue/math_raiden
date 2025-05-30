@@ -2,7 +2,9 @@ import { WEAPON_CONFIG } from '../utils/Constants.js';
 
 export default class Bullet extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, texture = 'bullet', isPlayer = true) {
-        super(scene, x, y, texture);
+        // 根据是否有贴图选择合适的纹理
+        const textureKey = Bullet.getTextureKey(scene, texture, isPlayer);
+        super(scene, x, y, textureKey);
         
         this.scene = scene;
         this.isPlayer = isPlayer;
@@ -14,13 +16,19 @@ export default class Bullet extends Phaser.Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
         
-        // 设置碰撞体积
+        // 设置碰撞体积和外观
         if (isPlayer) {
             this.setSize(4, 10);
-            this.setTint(0xffff00); // 玩家子弹黄色
+            // 仅在使用程序生成纹理时设置颜色
+            if (!this.texture.key.includes('-sprite')) {
+                this.setTint(0xffff00); // 玩家子弹黄色
+            }
         } else {
             this.setSize(6, 6);
-            this.setTint(0xff00ff); // 敌机子弹紫色
+            // 仅在使用程序生成纹理时设置颜色
+            if (!this.texture.key.includes('-sprite')) {
+                this.setTint(0xff00ff); // 敌机子弹紫色
+            }
         }
         
         // 初始状态为非活跃
@@ -30,6 +38,25 @@ export default class Bullet extends Phaser.Physics.Arcade.Sprite {
         // 出界自动回收
         this.checkWorldBounds = true;
         this.outOfBoundsKill = true;
+    }
+    
+    // 静态方法：获取子弹纹理键
+    static getTextureKey(scene, defaultTexture, isPlayer) {
+        if (isPlayer) {
+            // 玩家子弹
+            if (scene.textures.exists('bullet-sprite')) {
+                return 'bullet-sprite';
+            } else {
+                return 'bullet';
+            }
+        } else {
+            // 敌机子弹
+            if (scene.textures.exists('enemy-bullet-sprite')) {
+                return 'enemy-bullet-sprite';
+            } else {
+                return 'enemyBullet';
+            }
+        }
     }
     
     fire(x, y, angle = 0) {
