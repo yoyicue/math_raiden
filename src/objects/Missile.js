@@ -189,6 +189,29 @@ export default class Missile extends Phaser.Physics.Arcade.Sprite {
             this.scene.effectSystem.createExplosion(this.x, this.y, 'medium');
         }
         
+        // 进行范围伤害检测
+        this.performAreaDamage();
+        
+        // 播放爆炸音效
+        if (this.scene.sound.get('explosion')) {
+            this.scene.sound.play('explosion', { volume: 0.4 });
+        }
+        
+        this.deactivate();
+    }
+    
+    // 静默爆炸：只进行范围伤害，不产生视觉和音效
+    explodeWithoutVisualEffect() {
+        if (!this.active) return;
+        
+        // 只进行范围伤害检测，不产生视觉效果
+        this.performAreaDamage();
+        
+        this.deactivate();
+    }
+    
+    // 提取范围伤害逻辑为独立方法
+    performAreaDamage() {
         // 使用物理系统进行范围伤害检测
         const bodiesInRange = this.scene.physics.overlapCirc(
             this.x, this.y, this.explosionRadius, true, false
@@ -218,13 +241,6 @@ export default class Missile extends Phaser.Physics.Arcade.Sprite {
                 }
             }
         });
-        
-        // 播放爆炸音效
-        if (this.scene.sound.get('explosion')) {
-            this.scene.sound.play('explosion', { volume: 0.4 });
-        }
-        
-        this.deactivate();
     }
     
     deactivate() {

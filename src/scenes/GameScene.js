@@ -409,20 +409,21 @@ export default class GameScene extends Phaser.Scene {
             return;
         }
         
+        // 标记这个敌机已被直接击中，避免爆炸时重复伤害
+        enemy.hitByMissile = true;
+        
         // 导弹直接击中敌机，立即造成伤害
         if (enemy.takeDamage(missile.damage)) {
             // 敌机被摧毁，给予分数奖励（击败计数由Enemy.destroyEnemy()处理）
             this.addScore((enemy.scoreValue || 10) + 5); // 导弹击中额外加5分
+            
+            // 敌机已经在destroyEnemy()中产生了爆炸效果，导弹使用静默爆炸保留范围伤害
+            missile.explodeWithoutVisualEffect();
         } else {
-            // 敌机未被摧毁，给予少量额外分数
+            // 敌机未被摧毁，给予少量额外分数，导弹正常爆炸
             this.addScore(5);
+            missile.hit();
         }
-        
-        // 标记这个敌机已被直接击中，避免爆炸时重复伤害
-        enemy.hitByMissile = true;
-        
-        // 导弹爆炸并造成范围伤害
-        missile.hit();
     }
     
     applyPowerupEffect(powerType) {
