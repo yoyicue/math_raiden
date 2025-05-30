@@ -2,7 +2,9 @@ import { PLAYER_CONFIG, WEAPON_CONFIG } from '../utils/Constants.js';
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y) {
-        super(scene, x, y, 'player');
+        // 根据是否有贴图选择合适的纹理
+        const textureKey = Player.getTextureKey(scene);
+        super(scene, x, y, textureKey);
         
         this.scene = scene;
         
@@ -38,15 +40,17 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
         this.setCollideWorldBounds(true);
-        this.setSize(30, 30);
+        this.setSize(40, 40);
         this.setDrag(PLAYER_CONFIG.MOVEMENT.DRAG);
         this.setMaxVelocity(this.maxSpeed, this.maxSpeed);
         
         // 设置自定义移动边界（考虑移动端UI）
         this.setupMovementBounds();
         
-        // 设置玩家外观
-        this.setTint(0x00ff00);
+        // 设置玩家外观（仅在使用程序生成纹理时）
+        if (!this.texture.key.includes('-sprite')) {
+            this.setTint(0x00ff00);
+        }
         
         // 护盾效果对象
         this.shieldEffect = null;
@@ -54,6 +58,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         
         // 创建护盾效果
         this.createShieldEffect();
+    }
+    
+    // 静态方法：获取玩家纹理键
+    static getTextureKey(scene) {
+        // 优先使用贴图，如果不存在则使用程序生成的纹理
+        if (scene.textures.exists('player-sprite')) {
+            return 'player-sprite';
+        } else {
+            return 'player';
+        }
     }
     
     setupMovementBounds() {

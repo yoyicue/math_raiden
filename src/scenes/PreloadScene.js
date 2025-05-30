@@ -60,8 +60,41 @@ export default class PreloadScene extends Phaser.Scene {
             percentText.destroy();
         });
 
-        // 动态创建游戏资源
+        // 加载战机贴图资源
+        this.loadGameAssets();
+        
+        // 动态创建游戏资源（作为备用）
         this.createGameAssets();
+    }
+
+    loadGameAssets() {
+        // 加载玩家战机贴图
+        this.load.image('player-sprite', 'assets/images/player.png');
+        
+        // 加载不同类型的敌机贴图
+        this.load.image('enemy-basic-sprite', 'assets/images/enemy-basic.png');
+        this.load.image('enemy-fast-sprite', 'assets/images/enemy-fast.png');
+        this.load.image('enemy-tank-sprite', 'assets/images/enemy-tank.png');
+        this.load.image('enemy-shooter-sprite', 'assets/images/enemy-shooter.png');
+        
+        // 加载子弹贴图
+        this.load.image('bullet-sprite', 'assets/images/bullet.png');
+        this.load.image('enemy-bullet-sprite', 'assets/images/enemy-bullet.png');
+        
+        // 加载导弹贴图
+        this.load.image('missile-sprite', 'assets/images/missile.png');
+        
+        // 加载道具贴图
+        this.load.image('powerup-sprite', 'assets/images/powerup.png');
+        
+        // 加载特效贴图
+        this.load.image('explosion-sprite', 'assets/images/explosion.png');
+        this.load.image('particle-sprite', 'assets/images/particle.png');
+        
+        // 错误处理：如果贴图加载失败，使用程序生成的纹理
+        this.load.on('loaderror', (file) => {
+            console.warn(`贴图加载失败: ${file.key}, 将使用程序生成的纹理`);
+        });
     }
 
     create() {
@@ -73,47 +106,96 @@ export default class PreloadScene extends Phaser.Scene {
         // 创建游戏纹理
         const graphics = this.make.graphics({ x: 0, y: 0 }, false);
         
-        // 玩家飞机（绿色三角形）
-        graphics.fillStyle(0x00ff00);
-        graphics.fillTriangle(20, 0, 0, 40, 40, 40);
-        graphics.generateTexture('player', 40, 40);
+        // 检查并设置玩家飞机纹理
+        if (this.textures.exists('player-sprite')) {
+            // 如果玩家贴图存在，直接使用
+            console.log('使用玩家战机贴图');
+        } else {
+            // 玩家飞机（绿色三角形）- 程序生成备用，统一64x64px
+            graphics.fillStyle(0x00ff00);
+            graphics.fillTriangle(32, 8, 16, 56, 48, 56); // 在64x64画布中居中的三角形
+            graphics.generateTexture('player', 64, 64);
+            console.log('使用程序生成的玩家战机纹理');
+        }
         
-        // 敌机（红色方块）
-        graphics.clear();
-        graphics.fillStyle(0xff0000);
-        graphics.fillRect(0, 0, 40, 40);
-        graphics.generateTexture('enemy', 40, 40);
+        // 检查并设置敌机纹理
+        const enemyTypes = ['basic', 'fast', 'tank', 'shooter'];
+        const enemyColors = [0xff0000, 0xff6600, 0x666666, 0x9900ff];
         
-        // 子弹（黄色矩形）
-        graphics.clear();
-        graphics.fillStyle(0xffff00);
-        graphics.fillRect(0, 0, 4, 10);
-        graphics.generateTexture('bullet', 4, 10);
+        enemyTypes.forEach((type, index) => {
+            const spriteKey = `enemy-${type}-sprite`;
+            const textureKey = `enemy-${type}`;
+            
+            if (this.textures.exists(spriteKey)) {
+                console.log(`使用${type}敌机贴图`);
+                // 贴图存在，无需生成程序纹理
+            } else {
+                // 敌机（彩色方块）- 程序生成备用，统一64x64px
+                graphics.clear();
+                graphics.fillStyle(enemyColors[index]);
+                graphics.fillRect(8, 8, 48, 48); // 在64x64画布中居中的方块
+                graphics.generateTexture(textureKey, 64, 64);
+                console.log(`使用程序生成的${type}敌机纹理`);
+            }
+        });
         
-        // 敌机子弹（紫色圆形）
-        graphics.clear();
-        graphics.fillStyle(0xff00ff);
-        graphics.fillCircle(4, 4, 4);
-        graphics.generateTexture('enemyBullet', 8, 8);
+        // 通用敌机纹理（兼容性）
+        if (!this.textures.exists('enemy-basic-sprite')) {
+            graphics.clear();
+            graphics.fillStyle(0xff0000);
+            graphics.fillRect(8, 8, 48, 48); // 在64x64画布中居中的方块
+            graphics.generateTexture('enemy', 64, 64);
+        }
         
-        // 道具（彩色方块）
-        graphics.clear();
-        graphics.fillStyle(0xffd700);
-        graphics.fillRect(0, 0, 30, 30);
-        graphics.generateTexture('powerup', 30, 30);
+        // 检查并设置子弹纹理
+        if (!this.textures.exists('bullet-sprite')) {
+            // 子弹（黄色矩形）
+            graphics.clear();
+            graphics.fillStyle(0xffff00);
+            graphics.fillRect(0, 0, 4, 10);
+            graphics.generateTexture('bullet', 4, 10);
+            console.log('使用程序生成的玩家子弹纹理');
+        }
         
-        // 导弹（绿色菱形）
-        graphics.clear();
-        graphics.fillStyle(0x00ff00);
-        graphics.fillTriangle(4, 0, 0, 8, 8, 8);
-        graphics.fillRect(2, 8, 4, 8);
-        graphics.generateTexture('missile', 8, 16);
+        if (!this.textures.exists('enemy-bullet-sprite')) {
+            // 敌机子弹（紫色圆形）
+            graphics.clear();
+            graphics.fillStyle(0xff00ff);
+            graphics.fillCircle(4, 4, 4);
+            graphics.generateTexture('enemyBullet', 8, 8);
+            console.log('使用程序生成的敌机子弹纹理');
+        }
         
-        // 爆炸粒子
-        graphics.clear();
-        graphics.fillStyle(0xff6600);
-        graphics.fillCircle(2, 2, 2);
-        graphics.generateTexture('particle', 4, 4);
+        // 检查并设置道具纹理
+        if (!this.textures.exists('powerup-sprite')) {
+            // 道具（彩色方块）
+            graphics.clear();
+            graphics.fillStyle(0xffd700);
+            graphics.fillRect(0, 0, 30, 30);
+            graphics.generateTexture('powerup', 30, 30);
+            console.log('使用程序生成的道具纹理');
+        }
+        
+        // 检查并设置导弹纹理
+        if (!this.textures.exists('missile-sprite')) {
+            // 导弹（绿色菱形）
+            graphics.clear();
+            graphics.fillStyle(0x00ff00);
+            graphics.fillTriangle(4, 0, 0, 8, 8, 8);
+            graphics.fillRect(2, 8, 4, 8);
+            graphics.generateTexture('missile', 8, 16);
+            console.log('使用程序生成的导弹纹理');
+        }
+        
+        // 检查并设置粒子纹理
+        if (!this.textures.exists('particle-sprite')) {
+            // 爆炸粒子
+            graphics.clear();
+            graphics.fillStyle(0xff6600);
+            graphics.fillCircle(2, 2, 2);
+            graphics.generateTexture('particle', 4, 4);
+            console.log('使用程序生成的粒子纹理');
+        }
         
         // 星星粒子
         graphics.clear();

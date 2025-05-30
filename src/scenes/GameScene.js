@@ -310,8 +310,8 @@ export default class GameScene extends Phaser.Scene {
         if (this.gameState.paused || this.gameState.gameOver) return;
         
         const gameWidth = this.game.config.width;
-        const x = Math.random() * (gameWidth - 40);
-        const enemy = Enemy.createRandom(this, x, -40);
+        const x = Math.random() * (gameWidth - 64); // 修正为64px敌机尺寸
+        const enemy = Enemy.createRandom(this, x, -64); // 修正生成位置
         this.enemies.add(enemy);
     }
     

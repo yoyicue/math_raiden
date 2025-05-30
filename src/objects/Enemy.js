@@ -2,7 +2,9 @@ import { ENEMY_CONFIG } from '../utils/Constants.js';
 
 export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, type = 'BASIC') {
-        super(scene, x, y, 'enemy');
+        // 根据敌机类型选择合适的纹理
+        const textureKey = Enemy.getTextureKey(scene, type);
+        super(scene, x, y, textureKey);
         
         this.scene = scene;
         this.enemyType = type;
@@ -25,7 +27,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
         this.setCollideWorldBounds(false);
-        this.setSize(35, 35);
+        this.setSize(45, 45); // 修正为适合64x64px贴图的碰撞体积
         
         // 根据类型设置外观和属性
         this.setupByType(type);
@@ -41,21 +43,33 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     setupByType(type) {
         switch(type) {
             case 'FAST':
-                this.setTint(0xff6600);
+                // 仅在使用程序生成纹理时设置颜色
+                if (!this.texture.key.includes('-sprite')) {
+                    this.setTint(0xff6600);
+                }
                 this.movePattern = 'zigzag';
                 break;
             case 'TANK':
-                this.setTint(0x666666);
-                this.setScale(1.2);
+                // 仅在使用程序生成纹理时设置颜色
+                if (!this.texture.key.includes('-sprite')) {
+                    this.setTint(0x666666);
+                }
+                this.setScale(1.2); // 坦克敌机稍大一些
                 this.movePattern = 'straight';
                 break;
             case 'SHOOTER':
-                this.setTint(0x9900ff);
+                // 仅在使用程序生成纹理时设置颜色
+                if (!this.texture.key.includes('-sprite')) {
+                    this.setTint(0x9900ff);
+                }
                 this.movePattern = 'straight';
                 this.shootInterval = 30; // 更频繁射击
                 break;
             default: // BASIC
-                this.setTint(0xff0000);
+                // 仅在使用程序生成纹理时设置颜色
+                if (!this.texture.key.includes('-sprite')) {
+                    this.setTint(0xff0000);
+                }
                 break;
         }
     }
@@ -98,8 +112,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         }
         
         // 确保不超出屏幕边界
-        if (this.x < 20) this.x = 20;
-        if (this.x > this.scene.game.config.width - 20) this.x = this.scene.game.config.width - 20;
+        if (this.x < 32) this.x = 32; // 修正为敌机半宽（64/2=32）
+        if (this.x > this.scene.game.config.width - 32) this.x = this.scene.game.config.width - 32; // 修正为敌机半宽
     }
     
     updateShooting() {
@@ -223,5 +237,21 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
             maxHp: this.maxHp,
             score: this.scoreValue
         };
+    }
+    
+    // 静态方法：根据敌机类型获取纹理键
+    static getTextureKey(scene, type) {
+        // 根据敌机类型选择对应的贴图，如果不存在则使用程序生成的纹理
+        const spriteKey = `enemy-${type.toLowerCase()}-sprite`;
+        const fallbackKey = `enemy-${type.toLowerCase()}`;
+        
+        if (scene.textures.exists(spriteKey)) {
+            return spriteKey;
+        } else if (scene.textures.exists(fallbackKey)) {
+            return fallbackKey;
+        } else {
+            // 最终回退到通用敌机纹理
+            return scene.textures.exists('enemy') ? 'enemy' : 'enemy-basic';
+        }
     }
 } 
