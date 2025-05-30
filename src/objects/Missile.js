@@ -146,6 +146,13 @@ export default class Missile extends Phaser.Physics.Arcade.Sprite {
         const dy = this.target.y + this.target.height / 2 - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
+        // 添加最小碰撞距离检测，避免在目标周围打转
+        if (distance < 25) {
+            // 距离太近时直接爆炸
+            this.explode();
+            return;
+        }
+        
         if (distance > 0) {
             // 直接计算单位向量并应用速度
             const unitX = dx / distance;
@@ -188,22 +195,25 @@ export default class Missile extends Phaser.Physics.Arcade.Sprite {
         );
         
         bodiesInRange.forEach(body => {
-            if (body.gameObject && body.gameObject.texture && body.gameObject.texture.key === 'enemy') {
-                const enemy = body.gameObject;
-                if (enemy && enemy.active && typeof enemy.takeDamage === 'function') {
-                    const distance = Phaser.Math.Distance.Between(
-                        this.x, this.y, enemy.x, enemy.y
-                    );
-                    
-                    // 根据距离计算伤害衰减
-                    const damageMultiplier = 1 - (distance / this.explosionRadius) * 0.5;
-                    const actualDamage = Math.ceil(this.damage * damageMultiplier);
-                    
-                    if (enemy.takeDamage(actualDamage)) {
-                        // 敌机被摧毁，给予分数
-                        if (this.scene.addScore) {
-                            this.scene.addScore(enemy.scoreValue || 10);
-                        }
+            const gameObject = body.gameObject;
+            // 优化敌机识别逻辑：检查是否有takeDamage方法且在enemies组中
+            if (gameObject && gameObject.active && 
+                typeof gameObject.takeDamage === 'function' &&
+                this.scene.enemies && this.scene.enemies.children.entries.includes(gameObject) &&
+                !gameObject.hitByMissile) { // 避免重复伤害
+                
+                const distance = Phaser.Math.Distance.Between(
+                    this.x, this.y, gameObject.x, gameObject.y
+                );
+                
+                // 根据距离计算伤害衰减
+                const damageMultiplier = 1 - (distance / this.explosionRadius) * 0.5;
+                const actualDamage = Math.ceil(this.damage * damageMultiplier);
+                
+                if (gameObject.takeDamage(actualDamage)) {
+                    // 敌机被摧毁，给予分数
+                    if (this.scene.addScore) {
+                        this.scene.addScore(gameObject.scoreValue || 10);
                     }
                 }
             }
