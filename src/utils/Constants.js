@@ -73,42 +73,79 @@ export const POWERUP_CONFIG = {
             color: 0xffff00, 
             name: '武器升级', 
             icon: '⚡',
-            dropRate: 0.25      // 提高武器升级掉落率
+            dropRate: 0.25,      // 提高武器升级掉落率
+            glow: {
+                intensity: 0.8,
+                pulseSpeed: 300,
+                effects: ['pulse']
+            }
         },
         SHIELD: { 
             color: 0x00ffff, 
             name: '护盾', 
             icon: '🛡️',
-            dropRate: 0.25      // 提高护盾掉落率
+            dropRate: 0.25,      // 提高护盾掉落率
+            glow: {
+                intensity: 0.7,
+                pulseSpeed: 800,
+                effects: ['pulse']
+            }
         },
         LIFE: { 
             color: 0xff00ff, 
             name: '生命值', 
             icon: '❤️',
-            dropRate: 0.2       // 提高生命值掉落率
+            dropRate: 0.2,       // 提高生命值掉落率
+            glow: {
+                intensity: 0.8,
+                pulseSpeed: 600,
+                scaleAmount: 1.2,
+                effects: ['heartbeat']
+            }
         },
         BOMB: { 
             color: 0xff4444, 
             name: '清屏炸弹', 
             icon: '💥',
-            dropRate: 0.15      // 提高清屏炸弹掉落率
+            dropRate: 0.15,      // 提高清屏炸弹掉落率
+            glow: {
+                intensity: 0.9,
+                pulseSpeed: 200,
+                effects: ['danger_flash']
+            }
         },
         MISSILE: { 
             color: 0x00ff00, 
             name: '追踪导弹', 
             icon: '🚀',
-            dropRate: 0.1       // 降低导弹掉落率，避免过于强力
+            dropRate: 0.1,       // 降低导弹掉落率，避免过于强力
+            glow: {
+                intensity: 0.9,
+                pulseSpeed: 1000,
+                scaleAmount: 1.5,
+                effects: ['energy_charge']
+            }
         },
         SCORE: { 
             color: 0xffd700, 
             name: '分数奖励', 
             icon: '⭐',
-            dropRate: 0.05      // 降低分数奖励掉落率
+            dropRate: 0.05,      // 降低分数奖励掉落率
+            glow: {
+                intensity: 0.9,
+                colorChangeSpeed: 50,
+                effects: ['rainbow']
+            }
         }
     },
     DROP_CHANCE: 0.4,  // 提高到40%概率掉落道具
     SPEED: 90,
-    GLOW_RADIUS: 20
+    GLOW_RADIUS: 20,
+    GLOW_LAYERS: 5,    // 发光层数
+    GLOW_CONFIG: {
+        LAYER_ALPHA_MULTIPLIERS: [0.8, 0.6, 0.4, 0.2, 0.1],
+        LAYER_RADIUS_MULTIPLIERS: [0.3, 0.5, 0.7, 0.9, 1.0]
+    }
 };
 
 // 武器配置

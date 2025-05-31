@@ -370,7 +370,7 @@ export default class GameScene extends Phaser.Scene {
         
         console.log('Player collected powerup:', powerup.powerType);
         
-        // 玩家拾取道具
+        // 玩家拾取道具 - 使用容器的坐标
         this.effectSystem.createCollectEffect(powerup.x, powerup.y);
         
         // 触发数学题系统
@@ -509,22 +509,33 @@ export default class GameScene extends Phaser.Scene {
             powerupTexture = `temp-powerup-${type}`;
             console.log(`创建临时${config.name}纹理`);
         }
+
+        // 创建道具容器用于组合效果
+        const powerupContainer = this.add.container(x, y);
+        
+        // 创建发光背景层
+        const glowBackground = this.add.graphics();
+        this.createGlowEffect(glowBackground, config.color, POWERUP_CONFIG.GLOW_RADIUS);
+        powerupContainer.add(glowBackground);
         
         // 创建道具精灵
-        const powerup = this.add.image(x, y, powerupTexture);
+        const powerup = this.add.image(0, 0, powerupTexture);
         powerup.setDisplaySize(30, 30); // 确保显示尺寸为30x30
+        powerupContainer.add(powerup);
         
-        // 添加物理属性
-        this.physics.add.existing(powerup);
-        powerup.body.setVelocityY(POWERUP_CONFIG.SPEED);
-        powerup.body.setSize(30, 30); // 设置碰撞体积
+        // 添加物理属性到容器
+        this.physics.add.existing(powerupContainer);
+        powerupContainer.body.setVelocityY(POWERUP_CONFIG.SPEED);
+        powerupContainer.body.setSize(30, 30); // 设置碰撞体积
         
         // 设置道具属性
-        powerup.powerType = type;
+        powerupContainer.powerType = type;
+        powerupContainer.powerupSprite = powerup; // 保存精灵引用
+        powerupContainer.glowBackground = glowBackground; // 保存发光背景引用
         
         // 浮动动画
         this.tweens.add({
-            targets: powerup,
+            targets: powerupContainer,
             y: y + 10,
             duration: 1000,
             yoyo: true,
@@ -532,25 +543,141 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Sine.easeInOut'
         });
         
-        // 发光效果
-        this.tweens.add({
-            targets: powerup,
-            alpha: 0.7,
-            duration: 500,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
+        // 应用不同类型道具的特殊发光效果
+        this.applyGlowEffects(powerupContainer, type, config);
         
         // 添加到道具组
-        this.powerups.add(powerup);
+        this.powerups.add(powerupContainer);
         
         // 出界自动销毁
         this.time.delayedCall(10000, () => {
-            if (powerup.active) {
-                powerup.destroy();
+            if (powerupContainer.active) {
+                powerupContainer.destroy();
             }
         });
+    }
+
+    // 创建发光效果背景
+    createGlowEffect(graphics, color, radius) {
+        graphics.clear();
+        
+        // 创建径向渐变发光效果
+        const centerX = 0;
+        const centerY = 0;
+        
+        // 使用配置的发光层数和参数
+        const config = POWERUP_CONFIG.GLOW_CONFIG;
+        const layers = config.LAYER_RADIUS_MULTIPLIERS.map((radiusMultiplier, index) => ({
+            radius: radius * radiusMultiplier,
+            alpha: config.LAYER_ALPHA_MULTIPLIERS[index] || 0.1
+        }));
+        
+        layers.forEach(layer => {
+            graphics.fillStyle(color, layer.alpha);
+            graphics.fillCircle(centerX, centerY, layer.radius);
+        });
+    }
+
+    // 应用不同类型道具的特殊发光效果
+    applyGlowEffects(powerupContainer, type, config) {
+        const powerup = powerupContainer.powerupSprite;
+        const glowBackground = powerupContainer.glowBackground;
+        const glowConfig = config.glow;
+        
+        switch(type) {
+            case 'WEAPON':
+                // 武器升级：快速脉冲发光
+                this.tweens.add({
+                    targets: [powerup, glowBackground],
+                    alpha: 1 - glowConfig.intensity,
+                    duration: glowConfig.pulseSpeed,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Power2'
+                });
+                break;
+                
+            case 'SHIELD':
+                // 护盾：稳定发光
+                this.tweens.add({
+                    targets: glowBackground,
+                    alpha: 1 - glowConfig.intensity,
+                    duration: glowConfig.pulseSpeed,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+                break;
+                
+            case 'LIFE':
+                // 生命值：心跳式脉冲
+                this.tweens.add({
+                    targets: [powerup, glowBackground],
+                    scaleX: glowConfig.scaleAmount,
+                    scaleY: glowConfig.scaleAmount,
+                    alpha: glowConfig.intensity,
+                    duration: glowConfig.pulseSpeed,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Back.easeInOut'
+                });
+                break;
+                
+            case 'BOMB':
+                // 炸弹：危险闪烁
+                this.tweens.add({
+                    targets: [powerup, glowBackground],
+                    alpha: 1 - glowConfig.intensity,
+                    duration: glowConfig.pulseSpeed,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Power1'
+                });
+                break;
+                
+            case 'MISSILE':
+                // 导弹：能量充电效果
+                this.tweens.add({
+                    targets: glowBackground,
+                    alpha: glowConfig.intensity,
+                    scaleX: glowConfig.scaleAmount,
+                    scaleY: glowConfig.scaleAmount,
+                    duration: glowConfig.pulseSpeed,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+                break;
+                
+            case 'SCORE':
+                // 分数奖励：彩虹发光效果
+                let hue = 0;
+                this.time.addEvent({
+                    delay: glowConfig.colorChangeSpeed,
+                    callback: () => {
+                        if (powerupContainer.active) {
+                            hue = (hue + 15) % 360;
+                            const color = Phaser.Display.Color.HSVToRGB(hue / 360, 1, 1);
+                            const hexColor = Phaser.Display.Color.GetColor(color.r, color.g, color.b);
+                            glowBackground.clear();
+                            this.createGlowEffect(glowBackground, hexColor, POWERUP_CONFIG.GLOW_RADIUS);
+                        }
+                    },
+                    loop: true
+                });
+                break;
+                
+            default:
+                // 默认发光效果
+                this.tweens.add({
+                    targets: [powerup, glowBackground],
+                    alpha: 1 - (glowConfig?.intensity || 0.7),
+                    duration: glowConfig?.pulseSpeed || 500,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+        }
     }
     
     clearAllEnemies() {
