@@ -84,8 +84,13 @@ export default class PreloadScene extends Phaser.Scene {
         // 加载导弹贴图
         this.load.image('missile-sprite', 'assets/images/missile.png');
         
-        // 加载道具贴图
-        this.load.image('powerup-sprite', 'assets/images/powerup.png');
+        // 加载分类型道具贴图
+        this.load.image('powerup-weapon-sprite', 'assets/images/powerup-weapon.png');
+        this.load.image('powerup-shield-sprite', 'assets/images/powerup-shield.png');
+        this.load.image('powerup-life-sprite', 'assets/images/powerup-life.png');
+        this.load.image('powerup-bomb-sprite', 'assets/images/powerup-bomb.png');
+        this.load.image('powerup-missile-sprite', 'assets/images/powerup-missile.png');
+        this.load.image('powerup-score-sprite', 'assets/images/powerup-score.png');
         
         // 加载特效贴图
         this.load.image('explosion-sprite', 'assets/images/explosion.png');
@@ -167,14 +172,34 @@ export default class PreloadScene extends Phaser.Scene {
         }
         
         // 检查并设置道具纹理
-        if (!this.textures.exists('powerup-sprite')) {
-            // 道具（彩色方块）
-            graphics.clear();
-            graphics.fillStyle(0xffd700);
-            graphics.fillRect(0, 0, 30, 30);
-            graphics.generateTexture('powerup', 30, 30);
-            console.log('使用程序生成的道具纹理');
-        }
+        const powerupTypes = [
+            { type: 'weapon', color: 0xffff00, name: '武器升级' },
+            { type: 'shield', color: 0x00ffff, name: '护盾' },
+            { type: 'life', color: 0xff00ff, name: '生命值' },
+            { type: 'bomb', color: 0xff4444, name: '清屏炸弹' },
+            { type: 'missile', color: 0x00ff00, name: '追踪导弹' },
+            { type: 'score', color: 0xffd700, name: '分数奖励' }
+        ];
+        
+        powerupTypes.forEach(({ type, color, name }) => {
+            const spriteKey = `powerup-${type}-sprite`;
+            const textureKey = `powerup-${type}`;
+            
+            if (this.textures.exists(spriteKey)) {
+                console.log(`使用${name}道具贴图`);
+                // 贴图存在，无需生成程序纹理
+            } else {
+                // 道具（对应颜色的方块）- 程序生成备用
+                graphics.clear();
+                graphics.fillStyle(color);
+                graphics.fillRect(0, 0, 30, 30);
+                // 添加白色边框
+                graphics.lineStyle(2, 0xffffff, 1);
+                graphics.strokeRect(0, 0, 30, 30);
+                graphics.generateTexture(textureKey, 30, 30);
+                console.log(`使用程序生成的${name}道具纹理`);
+            }
+        });
         
         // 检查并设置导弹纹理
         if (!this.textures.exists('missile-sprite')) {

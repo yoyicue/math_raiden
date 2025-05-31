@@ -484,15 +484,43 @@ export default class GameScene extends Phaser.Scene {
         console.log('Creating powerup:', type, 'at', x, y);
         
         const config = POWERUP_CONFIG.TYPES[type];
-        const powerup = this.add.rectangle(x, y, 30, 30, config.color);
+        
+        // 获取道具贴图纹理键
+        const spriteKey = `powerup-${type.toLowerCase()}-sprite`;
+        const textureKey = `powerup-${type.toLowerCase()}`;
+        
+        // 优先使用贴图，如果不存在则使用程序生成的纹理
+        let powerupTexture;
+        if (this.textures.exists(spriteKey)) {
+            powerupTexture = spriteKey;
+            console.log(`使用${config.name}贴图:`, spriteKey);
+        } else if (this.textures.exists(textureKey)) {
+            powerupTexture = textureKey;
+            console.log(`使用程序生成的${config.name}纹理:`, textureKey);
+        } else {
+            // 最终回退：创建临时纹理
+            const graphics = this.add.graphics();
+            graphics.fillStyle(config.color);
+            graphics.fillRect(0, 0, 30, 30);
+            graphics.lineStyle(2, 0xffffff, 1);
+            graphics.strokeRect(0, 0, 30, 30);
+            graphics.generateTexture(`temp-powerup-${type}`, 30, 30);
+            graphics.destroy();
+            powerupTexture = `temp-powerup-${type}`;
+            console.log(`创建临时${config.name}纹理`);
+        }
+        
+        // 创建道具精灵
+        const powerup = this.add.image(x, y, powerupTexture);
+        powerup.setDisplaySize(30, 30); // 确保显示尺寸为30x30
         
         // 添加物理属性
         this.physics.add.existing(powerup);
         powerup.body.setVelocityY(POWERUP_CONFIG.SPEED);
+        powerup.body.setSize(30, 30); // 设置碰撞体积
         
         // 设置道具属性
         powerup.powerType = type;
-        powerup.setStrokeStyle(2, 0xffffff);
         
         // 浮动动画
         this.tweens.add({
