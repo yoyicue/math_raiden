@@ -1,4 +1,5 @@
 import { MATH_CONFIG } from '../utils/Constants.js';
+import StorageManager from '../utils/StorageManager.js';
 
 export default class MenuScene extends Phaser.Scene {
     constructor() {
@@ -78,6 +79,9 @@ export default class MenuScene extends Phaser.Scene {
         startButton.on('pointerdown', () => {
             this.startGame();
         });
+        
+        // 添加排行榜显示
+        this.createLeaderboard();
         
         // 操作说明
         this.add.text(centerX, centerY + 200, [
@@ -161,5 +165,44 @@ export default class MenuScene extends Phaser.Scene {
         this.cameras.main.once('camerafadeoutcomplete', () => {
             this.scene.start('GameScene', { gradeLevel: this.selectedGrade });
         });
+    }
+    
+    createLeaderboard() {
+        const gameWidth = this.game.config.width;
+        const gameHeight = this.game.config.height;
+        const leaderboardX = gameWidth - 100;
+        const leaderboardY = 100;
+        
+        // 排行榜标题
+        this.add.text(leaderboardX, leaderboardY, '🏆 最高分', {
+            fontSize: '20px',
+            color: '#ffd700',
+            fontFamily: 'Arial',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        
+        // 获取并显示前3名
+        const highScores = StorageManager.getHighScores();
+        const topScores = highScores.slice(0, 3);
+        
+        if (topScores.length > 0) {
+            topScores.forEach((score, index) => {
+                const rankColor = index === 0 ? '#ffd700' : index === 1 ? '#c0c0c0' : '#cd7f32';
+                const rankText = `${index + 1}. ${score}`;
+                
+                this.add.text(leaderboardX, leaderboardY + 40 + (index * 25), rankText, {
+                    fontSize: '16px',
+                    color: rankColor,
+                    fontFamily: 'Arial',
+                    fontStyle: 'bold'
+                }).setOrigin(0.5);
+            });
+        } else {
+            this.add.text(leaderboardX, leaderboardY + 40, '暂无记录', {
+                fontSize: '14px',
+                color: '#888888',
+                fontFamily: 'Arial'
+            }).setOrigin(0.5);
+        }
     }
 } 
