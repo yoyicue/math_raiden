@@ -7,6 +7,7 @@ import MathSystem from '../systems/MathSystem.js';
 import HUD from '../ui/HUD.js';
 import TouchControls from '../ui/TouchControls.js';
 import { GAME_CONFIG, POWERUP_CONFIG } from '../utils/Constants.js';
+import { PLAYER_CONFIG } from '../utils/Constants.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -439,8 +440,13 @@ export default class GameScene extends Phaser.Scene {
                 break;
                 
             case 'SHIELD':
-                this.player.addShield(15);
-                this.showMessage('护盾+15！', '#00ffff');
+                if (this.player.shield < PLAYER_CONFIG.MAX_SHIELD) {
+                    this.player.addShield(15);
+                    this.showMessage('护盾+15！', '#00ffff');
+                } else {
+                    this.addScore(150);
+                    this.showMessage('护盾已满！获得150分！', '#ffff00');
+                }
                 break;
                 
             case 'LIFE':
@@ -458,8 +464,13 @@ export default class GameScene extends Phaser.Scene {
                 break;
                 
             case 'MISSILE':
-                this.player.addMissiles(50);
-                this.showMessage('导弹+50！', '#00ff00');
+                if (this.player.missiles < PLAYER_CONFIG.MAX_MISSILES) {
+                    this.player.addMissiles(50);
+                    this.showMessage('导弹+50！', '#00ff00');
+                } else {
+                    this.addScore(300);
+                    this.showMessage('导弹已满！获得300分！', '#ffff00');
+                }
                 break;
                 
             case 'SCORE':

@@ -468,8 +468,13 @@ export default class MathSystem {
                 }
                 break;
             case 'SHIELD':
-                player.addShield(15);
-                rewardMessage = '护盾恢复+15！';
+                if (player.shield < PLAYER_CONFIG.MAX_SHIELD) {
+                    player.addShield(15);
+                    rewardMessage = '护盾恢复+15！';
+                } else {
+                    rewardMessage = '护盾已满！额外+150分！';
+                    scoreBonus += 150;
+                }
                 break;
             case 'LIFE':
                 if (player.addLife()) {
@@ -484,8 +489,13 @@ export default class MathSystem {
                 rewardMessage = '清屏炸弹！';
                 break;
             case 'MISSILE':
-                player.addMissiles(50);
-                rewardMessage = '导弹补给+50！';
+                if (player.missiles < PLAYER_CONFIG.MAX_MISSILES) {
+                    player.addMissiles(50);
+                    rewardMessage = '导弹补给+50！';
+                } else {
+                    rewardMessage = '导弹已满！额外+300分！';
+                    scoreBonus += 300;
+                }
                 break;
             case 'SCORE':
                 const extraScore = 500;
