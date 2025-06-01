@@ -49,8 +49,8 @@ export default class MenuScene extends Phaser.Scene {
         this.createDifficultyButtons();
         
         // 开始按钮
-        const startButton = this.add.rectangle(centerX, centerY + 100, 200, 60, 0x00ff00);
-        const startText = this.add.text(centerX, centerY + 100, '开始游戏', {
+        const startButton = this.add.rectangle(centerX, centerY + 120, 200, 60, 0x00ff00);
+        const startText = this.add.text(centerX, centerY + 120, '开始游戏', {
             fontSize: '28px',
             color: '#000000',
             fontStyle: 'bold',
@@ -109,30 +109,59 @@ export default class MenuScene extends Phaser.Scene {
         const centerY = this.game.config.height / 2;
         
         const difficulties = [
-            { grade: 1, text: 'G1 - 10以内加减', y: centerY - 50 },
-            { grade: 2, text: 'G2 - 20以内加减', y: centerY - 10 },
-            { grade: 3, text: 'G3 - 乘法运算', y: centerY + 30 }
+            { 
+                grade: 1, 
+                title: 'G1 - 基础口算', 
+                desc: '十几减几、凑十法、两位数加减',
+                y: centerY - 60 
+            },
+            { 
+                grade: 2, 
+                title: 'G2 - 进阶运算', 
+                desc: '100以内加减、混合运算、巧算',
+                y: centerY - 10 
+            },
+            { 
+                grade: 3, 
+                title: 'G3 - 乘法技巧', 
+                desc: '乘11、乘99、头同尾和10等',
+                y: centerY + 40 
+            }
         ];
         
         this.diffButtons = [];
         
         difficulties.forEach(diff => {
-            const button = this.add.rectangle(centerX, diff.y, 250, 35, 0x333333);
-            const text = this.add.text(centerX, diff.y, diff.text, {
-                fontSize: '18px',
+            // 主按钮
+            const button = this.add.rectangle(centerX, diff.y, 320, 45, 0x333333);
+            button.setStrokeStyle(2, 0x555555);
+            
+            // 标题文本
+            const titleText = this.add.text(centerX, diff.y - 8, diff.title, {
+                fontSize: '20px',
                 color: '#ffffff',
+                fontFamily: 'Arial',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            
+            // 描述文本
+            const descText = this.add.text(centerX, diff.y + 10, diff.desc, {
+                fontSize: '14px',
+                color: '#cccccc',
                 fontFamily: 'Arial'
             }).setOrigin(0.5);
             
             button.setInteractive({ useHandCursor: true });
             button.on('pointerover', () => {
                 if (diff.grade !== this.selectedGrade) {
-                    button.setFillStyle(0x555555);
+                    button.setFillStyle(0x444444);
+                    button.setStrokeStyle(2, 0x666666);
                 }
             });
             button.on('pointerout', () => {
                 if (diff.grade !== this.selectedGrade) {
                     button.setFillStyle(0x333333);
+                    button.setStrokeStyle(2, 0x555555);
                 }
             });
             button.on('pointerdown', () => {
@@ -140,7 +169,12 @@ export default class MenuScene extends Phaser.Scene {
                 this.updateDifficultyButtons();
             });
             
-            this.diffButtons.push({ button, text, grade: diff.grade });
+            this.diffButtons.push({ 
+                button, 
+                titleText, 
+                descText, 
+                grade: diff.grade 
+            });
         });
         
         this.updateDifficultyButtons();
@@ -150,10 +184,24 @@ export default class MenuScene extends Phaser.Scene {
         this.diffButtons.forEach(item => {
             if (item.grade === this.selectedGrade) {
                 item.button.setFillStyle(0xff6600);
-                item.text.setColor('#ffffff');
+                item.button.setStrokeStyle(3, 0xffaa00);
+                item.titleText.setColor('#ffffff');
+                item.descText.setColor('#ffeecc');
+                
+                // 选中动画
+                this.tweens.add({
+                    targets: item.button,
+                    scaleX: 1.02,
+                    scaleY: 1.02,
+                    duration: 200,
+                    ease: 'Back.easeOut'
+                });
             } else {
                 item.button.setFillStyle(0x333333);
-                item.text.setColor('#888888');
+                item.button.setStrokeStyle(2, 0x555555);
+                item.titleText.setColor('#aaaaaa');
+                item.descText.setColor('#888888');
+                item.button.setScale(1);
             }
         });
     }
