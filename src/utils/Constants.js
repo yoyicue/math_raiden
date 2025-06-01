@@ -30,28 +30,28 @@ export const PLAYER_CONFIG = {
 export const ENEMY_CONFIG = {
     TYPES: {
         BASIC: {
-            hp: 1,
+            hp: 2,  // 增加到2血，便于测试血条
             speed: 2,
             shootInterval: 90,     // 降低射击频率
             score: 10,
             color: 0xff0000
         },
         FAST: {
-            hp: 1,
+            hp: 2,  // 增加到2血，便于测试血条
             speed: 4,
             shootInterval: 75,     // 降低射击频率
             score: 15,
             color: 0xff6600
         },
         TANK: {
-            hp: 3,
+            hp: 4,  // 增加到4血，更明显的血条效果
             speed: 1,
             shootInterval: 120,    // 降低射击频率
             score: 25,
             color: 0x666666
         },
         SHOOTER: {
-            hp: 2,
+            hp: 3,  // 增加到3血，更明显的血条效果
             speed: 2,
             shootInterval: 50,     // 降低射击频率
             score: 20,

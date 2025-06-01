@@ -36,4 +36,7 @@ coverage/
 
 # 缓存
 .cache/
-.parcel-cache/ 
+.parcel-cache/
+
+# 数学考纲文档
+math_level.md 

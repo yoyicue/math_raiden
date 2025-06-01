@@ -1,4 +1,5 @@
 import { ENEMY_CONFIG } from '../utils/Constants.js';
+import HealthBar from '../ui/HealthBar.js';
 
 export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, type = 'BASIC') {
@@ -31,6 +32,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         
         // 根据类型设置外观和属性
         this.setupByType(type);
+        
+        // 创建血条（只有血量大于1的敌机才显示血条）
+        if (this.maxHp > 1) {
+            this.healthBar = new HealthBar(scene, x, y, this.maxHp);
+        }
         
         // 设置初始速度
         this.setVelocityY(this.speed * 60); // 转换为像素/秒
@@ -82,6 +88,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         
         // 更新射击
         this.updateShooting();
+        
+        // 更新血条位置
+        if (this.healthBar) {
+            this.healthBar.updatePosition(this.x, this.y);
+        }
         
         // 检查是否离开屏幕
         if (this.y > this.scene.game.config.height + 50) {
@@ -158,6 +169,15 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         
         this.hp -= damage;
         
+        // 更新血条并显示（如果有血条的话）
+        if (this.healthBar) {
+            this.healthBar.updateHealth(this.hp);
+            // 确保血条在受伤时显示
+            if (this.hp > 0 && this.hp < this.maxHp) {
+                this.healthBar.show();
+            }
+        }
+        
         // 受伤闪烁效果
         this.setTint(0xffffff);
         this.scene.time.delayedCall(100, () => {
@@ -181,6 +201,12 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     
     destroyEnemy() {
         if (!this.active) return;
+        
+        // 销毁血条
+        if (this.healthBar) {
+            this.healthBar.destroy();
+            this.healthBar = null;
+        }
         
         // 创建爆炸效果
         if (this.scene.effectSystem) {
@@ -209,6 +235,18 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         
         // 销毁敌机
         this.destroy();
+    }
+    
+    // 重写destroy方法，确保血条也被销毁
+    destroy() {
+        // 销毁血条
+        if (this.healthBar) {
+            this.healthBar.destroy();
+            this.healthBar = null;
+        }
+        
+        // 调用父类的destroy方法
+        super.destroy();
     }
     
     // 静态方法：创建随机类型的敌机
