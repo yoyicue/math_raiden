@@ -480,8 +480,15 @@ export default class MathSystem {
                 if (player.addLife()) {
                      rewardMessage = '生命恢复+1！';
                 } else {
-                    player.addShield(10); // 如果生命已满，给一些护盾
-                    rewardMessage = '生命已满！护盾+10！';
+                    // 生命已满时，给予护盾补偿，但要检查护盾上限
+                    if (player.shield < PLAYER_CONFIG.MAX_SHIELD) {
+                        const shieldBonus = Math.min(10, PLAYER_CONFIG.MAX_SHIELD - player.shield);
+                        player.addShield(shieldBonus);
+                        rewardMessage = `生命已满！护盾+${shieldBonus}！`;
+                    } else {
+                        rewardMessage = '生命和护盾都已满！额外+250分！';
+                        scoreBonus += 250;
+                    }
                 }
                 break;
             case 'BOMB':
