@@ -8,10 +8,10 @@ export const GAME_CONFIG = {
 // 玩家配置
 export const PLAYER_CONFIG = {
     SPEED: 300,
-    MAX_LIVES: 3,
-    MAX_SHIELD: 100,
+    MAX_LIVES: 5,
+    MAX_SHIELD: 25,
     MAX_WEAPON_LEVEL: 3,
-    MAX_MISSILES: 999,
+    MAX_MISSILES: 100,
     INVULNERABLE_TIME: {
         SHIELD_HIT: 60,  // 1秒 (60帧)
         LIFE_HIT: 120    // 2秒
