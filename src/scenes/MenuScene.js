@@ -49,34 +49,34 @@ export default class MenuScene extends Phaser.Scene {
         this.createDifficultyButtons();
         
         // 开始按钮
-        const startButton = this.add.rectangle(centerX, centerY + 120, 200, 60, 0x00ff00);
-        const startText = this.add.text(centerX, centerY + 120, '开始游戏', {
+        this.startButton = this.add.rectangle(centerX, centerY + 120, 200, 60, 0x00ff00);
+        this.startText = this.add.text(centerX, centerY + 120, '开始游戏', {
             fontSize: '28px',
             color: '#000000',
             fontStyle: 'bold',
             fontFamily: 'Arial'
         }).setOrigin(0.5);
         
-        startButton.setInteractive({ useHandCursor: true });
-        startButton.on('pointerover', () => {
-            startButton.setFillStyle(0x00cc00);
+        this.startButton.setInteractive({ useHandCursor: true });
+        this.startButton.on('pointerover', () => {
+            this.startButton.setFillStyle(0x00cc00);
             this.tweens.add({
-                targets: startButton,
+                targets: this.startButton,
                 scaleX: 1.05,
                 scaleY: 1.05,
                 duration: 100
             });
         });
-        startButton.on('pointerout', () => {
-            startButton.setFillStyle(0x00ff00);
+        this.startButton.on('pointerout', () => {
+            this.startButton.setFillStyle(0x00ff00);
             this.tweens.add({
-                targets: startButton,
+                targets: this.startButton,
                 scaleX: 1,
                 scaleY: 1,
                 duration: 100
             });
         });
-        startButton.on('pointerdown', () => {
+        this.startButton.on('pointerdown', () => {
             this.startGame();
         });
         
@@ -102,6 +102,68 @@ export default class MenuScene extends Phaser.Scene {
             color: '#666666',
             fontFamily: 'Arial'
         }).setOrigin(0.5);
+        
+        // 设置键盘控制
+        this.setupKeyboardControls();
+    }
+    
+    setupKeyboardControls() {
+        // 方向键控制
+        this.cursors = this.input.keyboard.createCursorKeys();
+        
+        // 数字键1-3直接选择难度
+        this.key1 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
+        this.key2 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
+        this.key3 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
+        
+        // 回车键开始游戏
+        this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+        this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        
+        // 键盘事件监听
+        this.cursors.up.on('down', () => {
+            this.changeDifficulty(-1);
+        });
+        
+        this.cursors.down.on('down', () => {
+            this.changeDifficulty(1);
+        });
+        
+        this.key1.on('down', () => {
+            this.selectedGrade = 1;
+            this.updateDifficultyButtons();
+        });
+        
+        this.key2.on('down', () => {
+            this.selectedGrade = 2;
+            this.updateDifficultyButtons();
+        });
+        
+        this.key3.on('down', () => {
+            this.selectedGrade = 3;
+            this.updateDifficultyButtons();
+        });
+        
+        this.enterKey.on('down', () => {
+            this.startGame();
+        });
+        
+        this.spaceKey.on('down', () => {
+            this.startGame();
+        });
+    }
+    
+    changeDifficulty(direction) {
+        this.selectedGrade += direction;
+        
+        // 循环选择
+        if (this.selectedGrade > 3) {
+            this.selectedGrade = 1;
+        } else if (this.selectedGrade < 1) {
+            this.selectedGrade = 3;
+        }
+        
+        this.updateDifficultyButtons();
     }
     
     createDifficultyButtons() {

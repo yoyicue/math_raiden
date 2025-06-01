@@ -7,6 +7,7 @@ export default class GameOverScene extends Phaser.Scene {
 
     init(data) {
         this.gameData = data || {};
+        this.selectedButton = 0; // 0: 重新开始, 1: 返回主菜单
     }
 
     create() {
@@ -120,36 +121,151 @@ export default class GameOverScene extends Phaser.Scene {
         const buttonYPosition = leaderboardYPosition + (highScores.length > 0 ? highScores.length * 25 : 25) + 40;
         
         // 重新开始按钮
-        const restartButton = this.add.rectangle(centerX - 100, buttonYPosition, 150, 50, 0xff6600);
-        const restartText = this.add.text(centerX - 100, buttonYPosition, '重新开始', {
+        this.restartButton = this.add.rectangle(centerX - 100, buttonYPosition, 150, 50, 0xff6600);
+        this.restartText = this.add.text(centerX - 100, buttonYPosition, '重新开始', {
             fontSize: '20px',
             color: '#ffffff',
             fontFamily: 'Arial'
         }).setOrigin(0.5);
         
-        restartButton.setInteractive({ useHandCursor: true });
-        restartButton.on('pointerover', () => restartButton.setFillStyle(0xff8800));
-        restartButton.on('pointerout', () => restartButton.setFillStyle(0xff6600));
-        restartButton.on('pointerdown', () => {
-            this.scene.start('GameScene', { gradeLevel: this.gameData.gradeLevel || 1 });
+        this.restartButton.setInteractive({ useHandCursor: true });
+        this.restartButton.on('pointerover', () => {
+            this.selectedButton = 0;
+            this.updateButtonSelection();
+        });
+        this.restartButton.on('pointerout', () => this.restartButton.setFillStyle(0xff6600));
+        this.restartButton.on('pointerdown', () => {
+            this.restartGame();
         });
         
         // 返回主菜单按钮
-        const menuButton = this.add.rectangle(centerX + 100, buttonYPosition, 150, 50, 0x333333);
-        const menuText = this.add.text(centerX + 100, buttonYPosition, '返回主菜单', {
+        this.menuButton = this.add.rectangle(centerX + 100, buttonYPosition, 150, 50, 0x333333);
+        this.menuText = this.add.text(centerX + 100, buttonYPosition, '返回主菜单', {
             fontSize: '20px',
             color: '#ffffff',
             fontFamily: 'Arial'
         }).setOrigin(0.5);
         
-        menuButton.setInteractive({ useHandCursor: true });
-        menuButton.on('pointerover', () => menuButton.setFillStyle(0x555555));
-        menuButton.on('pointerout', () => menuButton.setFillStyle(0x333333));
-        menuButton.on('pointerdown', () => {
-            this.scene.start('MenuScene');
+        this.menuButton.setInteractive({ useHandCursor: true });
+        this.menuButton.on('pointerover', () => {
+            this.selectedButton = 1;
+            this.updateButtonSelection();
         });
+        this.menuButton.on('pointerout', () => this.menuButton.setFillStyle(0x333333));
+        this.menuButton.on('pointerdown', () => {
+            this.returnToMenu();
+        });
+        
+        // 键盘操作说明
+        this.add.text(centerX, buttonYPosition + 80, [
+            '键盘操作：',
+            '←→键选择 | 回车键确认 | R键重新开始 | M键返回菜单'
+        ], {
+            fontSize: '16px',
+            color: '#888888',
+            fontFamily: 'Arial',
+            align: 'center',
+            lineSpacing: 5
+        }).setOrigin(0.5);
+        
+        // 设置键盘控制
+        this.setupKeyboardControls();
+        
+        // 初始化按钮选择状态
+        this.updateButtonSelection();
         
         // 淡入效果
         this.cameras.main.fadeIn(500, 0, 0, 0);
+    }
+    
+    setupKeyboardControls() {
+        // 方向键控制
+        this.cursors = this.input.keyboard.createCursorKeys();
+        
+        // 功能键
+        this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+        this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+        this.mKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+        this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+        
+        // 键盘事件监听
+        this.cursors.left.on('down', () => {
+            this.selectedButton = 0;
+            this.updateButtonSelection();
+        });
+        
+        this.cursors.right.on('down', () => {
+            this.selectedButton = 1;
+            this.updateButtonSelection();
+        });
+        
+        this.enterKey.on('down', () => {
+            this.confirmSelection();
+        });
+        
+        this.spaceKey.on('down', () => {
+            this.confirmSelection();
+        });
+        
+        this.rKey.on('down', () => {
+            this.restartGame();
+        });
+        
+        this.mKey.on('down', () => {
+            this.returnToMenu();
+        });
+        
+        this.escKey.on('down', () => {
+            this.returnToMenu();
+        });
+    }
+    
+    updateButtonSelection() {
+        // 重置所有按钮样式
+        this.restartButton.setFillStyle(0xff6600);
+        this.restartButton.setStrokeStyle(0);
+        this.restartButton.setScale(1);
+        
+        this.menuButton.setFillStyle(0x333333);
+        this.menuButton.setStrokeStyle(0);
+        this.menuButton.setScale(1);
+        
+        // 高亮选中的按钮
+        if (this.selectedButton === 0) {
+            this.restartButton.setFillStyle(0xff8800);
+            this.restartButton.setStrokeStyle(3, 0xffaa00);
+            this.tweens.add({
+                targets: this.restartButton,
+                scaleX: 1.05,
+                scaleY: 1.05,
+                duration: 100
+            });
+        } else {
+            this.menuButton.setFillStyle(0x555555);
+            this.menuButton.setStrokeStyle(3, 0x777777);
+            this.tweens.add({
+                targets: this.menuButton,
+                scaleX: 1.05,
+                scaleY: 1.05,
+                duration: 100
+            });
+        }
+    }
+    
+    confirmSelection() {
+        if (this.selectedButton === 0) {
+            this.restartGame();
+        } else {
+            this.returnToMenu();
+        }
+    }
+    
+    restartGame() {
+        this.scene.start('GameScene', { gradeLevel: this.gameData.gradeLevel || 1 });
+    }
+    
+    returnToMenu() {
+        this.scene.start('MenuScene');
     }
 } 
