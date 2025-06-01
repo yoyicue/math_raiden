@@ -163,7 +163,7 @@ export const WEAPON_CONFIG = {
     }
 };
 
-// 数学题配置
+// 口算题配置
 export const MATH_CONFIG = {
     GRADES: {
         1: {

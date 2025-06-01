@@ -159,7 +159,7 @@ const coreFeatures = [
     { name: '敌机系统', files: ['src/objects/Enemy.js'], minLines: 150 },
     { name: '子弹系统', files: ['src/objects/Bullet.js'], minLines: 150 },
     { name: '导弹系统', files: ['src/objects/Missile.js'], minLines: 100 },
-    { name: '数学题系统', files: ['src/systems/MathSystem.js'], minLines: 200 },
+    { name: '口算题系统', files: ['src/systems/MathSystem.js'], minLines: 200 },
     { name: '特效系统', files: ['src/systems/EffectSystem.js'], minLines: 200 },
     { name: 'HUD界面', files: ['src/ui/HUD.js'], minLines: 200 },
     { name: '移动端触控', files: ['src/ui/TouchControls.js'], minLines: 300 },
@@ -241,7 +241,7 @@ if (allFilesExist && allDirsExist) {
     if (completionRate >= 90) {
         console.log('  🎉 项目已完成，功能齐全，支持跨平台');
         console.log('  📱 移动端支持完整，包含触控系统');
-        console.log('  🧮 数学教育功能完善');
+        console.log('  🧮 口算教育功能完善');
     } else if (completionRate >= 70) {
         console.log('  🚧 项目基本完成，核心功能已实现');
     } else {
@@ -259,7 +259,7 @@ if (allFilesExist && allDirsExist) {
         console.log('  1. 运行 npm run dev 启动开发服务器');
         console.log('  2. 访问 http://localhost:3000 查看游戏');
         console.log('  3. 继续完善核心游戏逻辑');
-        console.log('  4. 测试数学题系统和游戏机制');
+        console.log('  4. 测试口算题系统和游戏机制');
     }
 } else {
     console.log('  ⚠️  项目结构不完整，请检查缺失的文件和目录');
@@ -275,7 +275,7 @@ console.log('  git commit -m "feat: 更新功能" - 提交更改 (CC规范)');
 
 console.log('\n🎮 游戏特色:');
 console.log('  🚀 完整的射击游戏体验');
-console.log('  🧮 三难度等级数学题系统');
+console.log('  🧮 三难度等级口算题系统');
 console.log('  📱 完整移动端支持 (虚拟摇杆 + 触屏)');
 console.log('  🎯 跨平台兼容 (桌面端 + 移动端)');
 console.log('  ⚡ 高性能优化 (对象池 + 动态纹理)');

@@ -405,7 +405,7 @@ export default class MathSystem {
     showQuestion(powerType) {
         console.log('MathSystem.showQuestion called with powerType:', powerType);
         if (this.isQuestionActive()) {
-            console.warn('MathSystem: 已有活跃的数学题，忽略新的题目请求');
+            console.warn('MathSystem: 已有活跃的口算题，忽略新的题目请求');
             return;
         }
 

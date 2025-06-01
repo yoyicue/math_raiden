@@ -38,5 +38,5 @@ coverage/
 .cache/
 .parcel-cache/
 
-# 数学考纲文档
+# 口算考纲文档
 math_level.md 
