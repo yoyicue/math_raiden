@@ -38,7 +38,7 @@ export default class MenuScene extends Phaser.Scene {
         });
         
         // 副标题
-        this.add.text(centerX, centerY - 120, '边玩边学，提升数学技能', {
+        this.add.text(centerX, centerY - 120, '边玩边学，提升口算技能', {
             fontSize: '24px',
             color: '#ffffff',
             fontFamily: 'Arial'
@@ -113,7 +113,7 @@ export default class MenuScene extends Phaser.Scene {
                 grade: 1, 
                 title: 'G1 - 基础口算', 
                 desc: '十几减几、凑十法、两位数加减',
-                y: centerY - 60 
+                y: centerY - 70 
             },
             { 
                 grade: 2, 
@@ -125,7 +125,7 @@ export default class MenuScene extends Phaser.Scene {
                 grade: 3, 
                 title: 'G3 - 乘法技巧', 
                 desc: '乘11、乘99、头同尾和10等',
-                y: centerY + 40 
+                y: centerY + 50 
             }
         ];
         
@@ -133,11 +133,11 @@ export default class MenuScene extends Phaser.Scene {
         
         difficulties.forEach(diff => {
             // 主按钮
-            const button = this.add.rectangle(centerX, diff.y, 320, 45, 0x333333);
+            const button = this.add.rectangle(centerX, diff.y, 320, 50, 0x333333);
             button.setStrokeStyle(2, 0x555555);
             
             // 标题文本
-            const titleText = this.add.text(centerX, diff.y - 8, diff.title, {
+            const titleText = this.add.text(centerX, diff.y - 10, diff.title, {
                 fontSize: '20px',
                 color: '#ffffff',
                 fontFamily: 'Arial',
@@ -145,7 +145,7 @@ export default class MenuScene extends Phaser.Scene {
             }).setOrigin(0.5);
             
             // 描述文本
-            const descText = this.add.text(centerX, diff.y + 10, diff.desc, {
+            const descText = this.add.text(centerX, diff.y + 12, diff.desc, {
                 fontSize: '14px',
                 color: '#cccccc',
                 fontFamily: 'Arial'
