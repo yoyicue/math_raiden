@@ -11,7 +11,7 @@ export default class BootScene extends Phaser.Scene {
         const centerY = gameHeight / 2;
         
         // 显示启动信息
-        this.add.text(centerX, centerY - 50, '数学雷电', {
+        this.add.text(centerX, centerY - 50, '口算雷电', {
             fontSize: '32px',
             color: '#00ff00',
             fontFamily: 'Arial'

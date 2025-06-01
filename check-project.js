@@ -3,7 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 
-console.log('🎮 数学雷电 Phaser版 - 项目状态检查\n');
+console.log('🎮 口算雷电 Phaser版 - 项目状态检查\n');
 
 // 检查必要文件
 const requiredFiles = [

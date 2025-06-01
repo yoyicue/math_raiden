@@ -17,7 +17,7 @@ export default class MenuScene extends Phaser.Scene {
         this.add.rectangle(centerX, centerY, gameWidth, gameHeight, 0x000428);
         
         // 标题
-        const title = this.add.text(centerX, centerY - 200, '数学雷电', {
+        const title = this.add.text(centerX, centerY - 200, '口算雷电', {
             fontSize: '72px',
             fontFamily: 'Arial',
             color: '#00ff00',
