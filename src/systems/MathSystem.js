@@ -515,15 +515,20 @@ export default class MathSystem {
         const player = this.scene.player;
         if (!player) return;
 
+        // 答错只给予保护时间，不给予道具奖励
         player.setInvulnerable(MATH_CONFIG.REWARDS.INCORRECT.invulnerableTime);
         
-        // 对于错误答案，简单的消息通常更好
-        // MathQuestionScene可能显示"再试一次！"或"错误"
-        // GameScene HUD可以显示通用的"保护时间！"
-        if (this.scene.hud && powerType) {
-            this.scene.hud.showPowerupMessage(powerType, false); // false表示错误
+        // 显示答错的消息
+        if (this.scene.hud) {
+            this.scene.hud.showMessage('答错了！获得短暂保护时间', '#ffaa00', 2000);
         } else if (this.scene.showMessage) {
-             this.scene.showMessage('获得短暂保护！', '#ffaa00');
+            this.scene.showMessage('答错了！获得短暂保护时间', '#ffaa00');
+        }
+        
+        // 答错时的视觉效果（如果有的话）
+        if (this.scene.effectSystem && player.active) {
+            // 可以添加一个不同的效果，比如保护光环
+            // this.scene.effectSystem.createProtectionEffect(player.x, player.y);
         }
     }
     
